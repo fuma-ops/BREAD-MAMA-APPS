@@ -144,3 +144,84 @@ export const logActionToSheet = async (
     return false;
   }
 };
+
+/**
+ * Fetch all products from the Google Sheet
+ */
+export const fetchProductsFromSheet = async (): Promise<any[]> => {
+  if (!API_URL) {
+    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+    return [];
+  }
+
+  try {
+    const response = await fetch(`${API_URL}?type=products`);
+    const result = await response.json();
+    
+    if (result.status === 'success') {
+      return result.data;
+    } else {
+      throw new Error(result.message || "Failed to fetch products");
+    }
+  } catch (error) {
+    console.error("Error fetching products from Google Sheets:", error);
+    throw error;
+  }
+};
+
+/**
+ * Sync products list with Google Sheets
+ */
+export const syncProductsToSheet = async (products: any[]): Promise<boolean> => {
+  if (!API_URL) {
+    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+    return false;
+  }
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        action: "SYNC_PRODUCTS",
+        products
+      })
+    });
+    const result = await response.json();
+    return result.status === "success";
+  } catch (error) {
+    console.error("Error syncing products to sheet:", error);
+    return false;
+  }
+};
+
+/**
+ * Add a contact message to the Google Sheet
+ */
+export const addMessageToSheet = async (message: { nom: string; email: string; sujet: string; message: string }): Promise<boolean> => {
+  if (!API_URL) {
+    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+    return false;
+  }
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        action: "ADD_MESSAGE",
+        message
+      })
+    });
+    const result = await response.json();
+    return result.status === "success";
+  } catch (error) {
+    console.error("Error adding message to sheet:", error);
+    return false;
+  }
+};
+

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product } from '../types';
 import { products as defaultProducts } from '../data/products';
+import { fetchProductsFromSheet, syncProductsToSheet } from '../services/googleSheetsService';
 
 interface ProductContextType {
   products: Product[];
@@ -8,41 +9,78 @@ interface ProductContextType {
   updateProduct: (id: number, product: Omit<Product, 'id'>) => void;
   deleteProduct: (id: number) => void;
   addReview: (id: number, review: { author: string; rating: number; text: string }) => void;
+  loading: boolean;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export function ProductProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem('darkom_products');
-      return saved ? JSON.parse(saved) : defaultProducts;
-    } catch (e) {
-      console.warn('Failed to read products from localStorage', e);
-      return defaultProducts;
-    }
-  });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('darkom_products', JSON.stringify(products));
-    } catch (e) {
-      console.warn('Failed to write products to localStorage', e);
+    const loadProducts = async () => {
+      try {
+        const saved = localStorage.getItem('darkom_products');
+        if (saved) {
+          setProducts(JSON.parse(saved));
+        } else {
+          setProducts(defaultProducts);
+        }
+
+        const sheetProducts = await fetchProductsFromSheet();
+        if (sheetProducts && sheetProducts.length > 0) {
+          const formattedProducts: Product[] = sheetProducts.map(p => ({
+            id: Number(p.id),
+            name: p.nom,
+            price: Number(p.prix),
+            category: p.categorie as any,
+            description: p.description,
+            image: p.image || 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&q=80',
+            reviews: [] // Reviews not currently synced in individual columns, reset or use default
+          }));
+          setProducts(formattedProducts);
+        } else if (!saved && sheetProducts && sheetProducts.length === 0) {
+           // Si la base est completement vide sur Google Sheets, on la remplit avec nos produits par défaut
+           await syncProductsToSheet(defaultProducts);
+        }
+      } catch (error) {
+        console.error("Could not fetch products from Google Sheets. Using local cache.", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      try {
+        localStorage.setItem('darkom_products', JSON.stringify(products));
+      } catch (e) {
+        console.warn('Failed to write products to localStorage', e);
+      }
     }
   }, [products]);
 
-  const addProduct = (newProductData: Omit<Product, 'id'>) => {
+  const addProduct = async (newProductData: Omit<Product, 'id'>) => {
     const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
     const newProduct: Product = { ...newProductData, id: newId };
-    setProducts(prev => [...prev, newProduct]);
+    const updatedProducts = [...products, newProduct];
+    setProducts(updatedProducts);
+    await syncProductsToSheet(updatedProducts);
   };
 
-  const updateProduct = (id: number, updatedProductData: Omit<Product, 'id'>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...updatedProductData, id } : p));
+  const updateProduct = async (id: number, updatedProductData: Omit<Product, 'id'>) => {
+    const updatedProducts = products.map(p => p.id === id ? { ...updatedProductData, id } : p);
+    setProducts(updatedProducts);
+    await syncProductsToSheet(updatedProducts);
   };
 
-  const deleteProduct = (id: number) => {
-     setProducts(prev => prev.filter(p => p.id !== id));
+  const deleteProduct = async (id: number) => {
+     const updatedProducts = products.filter(p => p.id !== id);
+     setProducts(updatedProducts);
+     await syncProductsToSheet(updatedProducts);
   };
 
   const addReview = (id: number, review: { author: string; rating: number; text: string }) => {
@@ -50,15 +88,16 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
       if (p.id === id) {
         return {
           ...p,
-          reviews: [review, ...p.reviews]
+          reviews: [review, ...(p.reviews || [])]
         };
       }
       return p;
     }));
+    // Note: Reviews aren't explicitly synced back via syncProductsToSheet right now unless we added a 'reviews' column.
   };
 
   return (
-    <ProductContext.Provider value={{ products, addProduct, updateProduct, deleteProduct, addReview }}>
+    <ProductContext.Provider value={{ products, addProduct, updateProduct, deleteProduct, addReview, loading }}>
       {children}
     </ProductContext.Provider>
   );

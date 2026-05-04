@@ -1,14 +1,41 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { addMessageToSheet } from '../services/googleSheetsService';
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    setLoading(true);
+    
+    try {
+      await addMessageToSheet({
+        nom: formData.name,
+        email: formData.email,
+        sujet: "Contact Site Web",
+        message: formData.message
+      });
+      setSubmitted(true);
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (error) {
+      console.error("Error submitting contact form", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   return (
@@ -92,6 +119,9 @@ export default function Contact() {
                 <label className="text-sm font-bold text-white/70 block mb-2">Nom Complet</label>
                 <input 
                   type="text" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
                   required
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] transition-colors"
                   placeholder="Votre nom"
@@ -102,6 +132,9 @@ export default function Contact() {
                 <label className="text-sm font-bold text-white/70 block mb-2">Email</label>
                 <input 
                   type="email" 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] transition-colors"
                   placeholder="votre@email.com"
@@ -111,6 +144,9 @@ export default function Contact() {
               <div>
                 <label className="text-sm font-bold text-white/70 block mb-2">Message</label>
                 <textarea 
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   required
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] h-32 resize-none transition-colors"
                   placeholder="Comment pouvons-nous vous aider ?"
@@ -120,10 +156,12 @@ export default function Contact() {
 
             <button 
               type="submit"
-              disabled={submitted}
-              className="w-full py-4 bg-gradient-to-r from-[var(--color-accent)] to-[#6b4229] hover:opacity-90 text-white font-bold rounded-lg shadow-lg flex justify-center items-center gap-2 transition-all"
+              disabled={loading || submitted}
+              className={`w-full py-4 bg-gradient-to-r ${submitted ? 'from-green-500 to-green-600' : 'from-[var(--color-accent)] to-[#6b4229]'} hover:opacity-90 text-white font-bold rounded-lg shadow-lg flex justify-center items-center gap-2 transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {submitted ? (
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : submitted ? (
                 <><CheckCircle size={20} /> Envoyé avec succès</>
               ) : (
                 <><Send size={20} /> Envoyer le message</>

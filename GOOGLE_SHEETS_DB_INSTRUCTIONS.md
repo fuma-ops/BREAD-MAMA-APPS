@@ -15,13 +15,15 @@ Pour utiliser Google Sheets comme base de données pour votre application, la m�
 const SHEET_ORDERS = "Commandes";
 const SHEET_LOGS = "AuditLogs";
 const SHEET_PRODUCTS = "Produits";
+const SHEET_MESSAGES = "Messages";
 
 const HEADERS_ORDERS = [
   "id", "date_creation", "client", "telephone", "adresse", 
   "produits", "total", "statut", "historique"
 ];
 const HEADERS_LOGS = ["timestamp", "acteur", "action", "details"];
-const HEADERS_PRODUCTS = ["id", "nom", "prix", "categorie", "description"];
+const HEADERS_PRODUCTS = ["id", "nom", "prix", "categorie", "description", "image"];
+const HEADERS_MESSAGES = ["timestamp", "nom", "email", "sujet", "message"];
 
 // Initialisation des bases de données
 function initDatabase() {
@@ -54,19 +56,34 @@ function initDatabase() {
     try { sheetProducts.autoResizeColumns(1, HEADERS_PRODUCTS.length); } catch(e) {}
   }
   
-  return { sheetOrders, sheetLogs, sheetProducts };
+  // Sheet Messages
+  let sheetMessages = ss.getSheetByName(SHEET_MESSAGES);
+  if (!sheetMessages) {
+    sheetMessages = ss.insertSheet(SHEET_MESSAGES);
+    sheetMessages.getRange(1, 1, 1, HEADERS_MESSAGES.length).setValues([HEADERS_MESSAGES]).setFontWeight("bold");
+    sheetMessages.setFrozenRows(1);
+    try { sheetMessages.autoResizeColumns(1, HEADERS_MESSAGES.length); } catch(e) {}
+  }
+  
+  return { sheetOrders, sheetLogs, sheetProducts, sheetMessages };
 }
 
 function doGet(e) {
   const { sheetOrders, sheetProducts } = initDatabase();
   
-  // Récupérer les commandes
-  const dataOrders = sheetOrders.getDataRange().getValues();
-  let resultOrders = [];
-  if (dataOrders.length > 1) {
-    const headers = dataOrders[0];
-    const rows = dataOrders.slice(1);
-    resultOrders = rows.map(row => {
+  let targetSheet = sheetOrders;
+  let isProductRequest = e && e.parameter && e.parameter.type === 'products';
+  
+  if (isProductRequest) {
+    targetSheet = sheetProducts;
+  }
+  
+  const dataList = targetSheet.getDataRange().getValues();
+  let resultList = [];
+  if (dataList.length > 1) {
+    const headers = dataList[0];
+    const rows = dataList.slice(1);
+    resultList = rows.map(row => {
       let obj = {};
       headers.forEach((header, index) => {
         obj[header] = row[index];
@@ -77,16 +94,33 @@ function doGet(e) {
 
   return ContentService.createTextOutput(JSON.stringify({ 
     status: "success", 
-    data: resultOrders
+    data: resultList
   }))
   .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
   try {
-    const { sheetOrders, sheetLogs, sheetProducts } = initDatabase();
+    const { sheetOrders, sheetLogs, sheetProducts, sheetMessages } = initDatabase();
     const postData = JSON.parse(e.postData.contents);
     const action = postData.action;
+
+    // --- Ajouter un message de contact ---
+    if (action === "ADD_MESSAGE") {
+      const msg = postData.message;
+      sheetMessages.appendRow([
+        new Date().toISOString(),
+        msg.nom || "",
+        msg.email || "",
+        msg.sujet || "",
+        msg.message || ""
+      ]);
+      
+      sheetLogs.appendRow([new Date().toISOString(), "Visiteur", "NOUVEAU_MESSAGE", JSON.stringify({nom: msg.nom})]);
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Message envoyé" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     // --- Tracer toutes les actions importantes (Logs) ---
     if (action === "LOG_ACTION") {
@@ -161,7 +195,8 @@ function doPost(e) {
         p.name || "",
         p.price || 0,
         p.category || "",
-        p.description || ""
+        p.description || "",
+        p.image || ""
       ]);
       
       if(newRows.length > 0) {
