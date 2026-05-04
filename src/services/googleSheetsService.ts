@@ -5,13 +5,14 @@ const API_URL = import.meta.env.VITE_GOOGLE_SHEETS_API_URL;
 
 export interface OrderData {
   id: string;
-  date: string;
+  date_creation: string;
   client: string;
   telephone: string;
   adresse: string;
   produits: string;
   total: number;
   statut: string;
+  historique: string;
   [key: string]: any;
 }
 
@@ -52,7 +53,7 @@ export const addOrderToSheet = async (order: OrderData): Promise<boolean> => {
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "text/plain;charset=utf-8", // text/plain used to avoid CORS preflight issues with GAS
+        "Content-Type": "text/plain;charset=utf-8",
       },
       body: JSON.stringify({
         action: "ADD_ORDER",
@@ -71,7 +72,13 @@ export const addOrderToSheet = async (order: OrderData): Promise<boolean> => {
 /**
  * Update the status of an existing order
  */
-export const updateOrderStatusInSheet = async (id: string, status: string): Promise<boolean> => {
+export const updateOrderStatusInSheet = async (
+  id: string, 
+  status: string, 
+  actor: string, 
+  timestamp: string, 
+  historyStr: string
+): Promise<boolean> => {
   if (!API_URL) {
     console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
     return false;
@@ -86,7 +93,10 @@ export const updateOrderStatusInSheet = async (id: string, status: string): Prom
       body: JSON.stringify({
         action: "UPDATE_ORDER_STATUS",
         id,
-        status
+        status,
+        actor,
+        timestamp,
+        historyStr
       })
     });
     
@@ -95,5 +105,42 @@ export const updateOrderStatusInSheet = async (id: string, status: string): Prom
   } catch (error) {
     console.error("Error updating order status:", error);
     throw error;
+  }
+};
+
+/**
+ * Log a general action to Google Sheets
+ */
+export const logActionToSheet = async (
+  actor: string,
+  actionType: string,
+  details: any
+): Promise<boolean> => {
+  if (!API_URL) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        action: "LOG_ACTION",
+        log: {
+          timestamp: new Date().toISOString(),
+          actor,
+          actionType,
+          details
+        }
+      })
+    });
+    
+    const result = await response.json();
+    return result.status === "success";
+  } catch (error) {
+    console.error("Error logging action:", error);
+    return false;
   }
 };

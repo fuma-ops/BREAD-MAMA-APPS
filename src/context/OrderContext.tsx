@@ -40,19 +40,30 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         const sheetOrders = await fetchOrdersFromSheet();
         if (sheetOrders && sheetOrders.length > 0) {
           // Convert sheet orders back to app's Order type
-          const formattedOrders: Order[] = sheetOrders.reverse().map(o => ({
-            id: o.id,
-            customerName: o.client,
-            customerPhone: o.telephone,
-            customerAddress: o.adresse,
-            items: JSON.parse(o.produits || '[]'),
-            subtotal: Number(o.total || 0),
-            deliveryFee: 15, // Default or parsed from somehow
-            total: Number(o.total || 0),
-            status: (o.statut || 'PENDING') as OrderStatus,
-            createdAt: o.date,
-            history: [{ status: (o.statut || 'PENDING') as OrderStatus, timestamp: o.date, actor: 'Système' }]
-          }));
+          const formattedOrders: Order[] = sheetOrders.reverse().map(o => {
+            let history = [];
+            try {
+              history = JSON.parse(o.historique || '[]');
+            } catch(e) {}
+            
+            if (history.length === 0) {
+              history = [{ status: (o.statut || 'PENDING') as OrderStatus, timestamp: o.date_creation || new Date().toISOString(), actor: 'Système' }];
+            }
+
+            return {
+              id: o.id,
+              customerName: o.client,
+              customerPhone: o.telephone,
+              customerAddress: o.adresse,
+              items: JSON.parse(o.produits || '[]'),
+              subtotal: Number(o.total || 0),
+              deliveryFee: 15,
+              total: Number(o.total || 0),
+              status: (o.statut || 'PENDING') as OrderStatus,
+              createdAt: o.date_creation || new Date().toISOString(),
+              history: history
+            };
+          });
           setOrders(formattedOrders);
         }
       } catch (error) {
@@ -84,13 +95,14 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     try {
       await addOrderToSheet({
         id: newOrder.id,
-        date: newOrder.createdAt,
+        date_creation: newOrder.createdAt,
         client: newOrder.customerName,
         telephone: newOrder.customerPhone,
         adresse: newOrder.customerAddress,
         produits: JSON.stringify(newOrder.items),
         total: newOrder.total,
-        statut: newOrder.status
+        statut: newOrder.status,
+        historique: JSON.stringify(newOrder.history)
       });
     } catch (e) {
       console.error("Failed to sync new order with Google Sheets", e);
@@ -98,6 +110,15 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateOrderStatus = async (id: string, newStatus: OrderStatus, actor: string = 'Système') => {
+    let orderHistoryStr = '[]';
+    let targetOrder = orders.find(o => o.id === id);
+    const timestamp = new Date().toISOString();
+    
+    if (targetOrder) {
+       const updatedHistory = [...(targetOrder.history || []), { status: newStatus, timestamp, actor }];
+       orderHistoryStr = JSON.stringify(updatedHistory);
+    }
+    
     // Update local state immediately
     setOrders(prev => prev.map(order => {
       if (order.id === id) {
@@ -116,7 +137,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         return {
           ...order,
           status: newStatus,
-          history: [...(order.history || []), { status: newStatus, timestamp: new Date().toISOString(), actor }]
+          history: [...(order.history || []), { status: newStatus, timestamp, actor }]
         };
       }
       return order;
@@ -124,7 +145,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
 
     // Sync with Google Sheets
     try {
-      await updateOrderStatusInSheet(id, newStatus);
+      await updateOrderStatusInSheet(id, newStatus, actor, timestamp, orderHistoryStr);
     } catch (e) {
       console.error("Failed to sync order status update with Google Sheets", e);
     }
