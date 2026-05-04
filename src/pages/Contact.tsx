@@ -1,0 +1,137 @@
+import React, { useState } from 'react';
+import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+
+export default function Contact() {
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+  };
+
+  return (
+    <div className="flex-1 py-12 px-4 container mx-auto max-w-6xl">
+      <div className="text-center mb-16 relative z-10">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-6xl font-serif font-bold text-white mb-6 tracking-tight"
+        >
+          Contactez <span className="text-[var(--color-gold)]">Nous</span>
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-lg text-white/70 max-w-2xl mx-auto"
+        >
+          Une question sur nos produits ? Une commande spéciale à passer ? Nous sommes à votre écoute pour toute demande.
+        </motion.p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-12 lg:gap-16 relative z-10">
+        {/* Informations */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-8"
+        >
+          <div className="bg-[var(--color-surface)] p-8 rounded-2xl border border-white/5 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <h2 className="text-2xl font-serif text-[var(--color-gold)] mb-6 font-bold">Nos Coordonnées</h2>
+            
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/10 group-hover:border-[var(--color-gold)]/30 transition-colors">
+                  <MapPin className="text-[var(--color-gold)]" size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white mb-1">Notre Atelier</h3>
+                  <p className="text-white/60">Gueliz, Marrakech<br/>Maroc</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/10 group-hover:border-[var(--color-gold)]/30 transition-colors">
+                  <Phone className="text-[var(--color-gold)]" size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white mb-1">Téléphone / WhatsApp</h3>
+                  <p className="text-white/60">+212 600 000 000<br/>Lun-Sam, 9h-20h</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/10 group-hover:border-[var(--color-gold)]/30 transition-colors">
+                  <Mail className="text-[var(--color-gold)]" size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white mb-1">Email</h3>
+                  <p className="text-white/60">contact@breadmama.ma<br/>Nous répondons sous 24h</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Formulaire */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] p-8 rounded-2xl border border-white/5 space-y-6">
+            <h2 className="text-2xl font-serif text-[var(--color-gold)] mb-2 font-bold">Envoyez-nous un message</h2>
+            <p className="text-white/50 text-sm mb-6">Remplissez ce formulaire et nous vous contacterons au plus vite.</p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-bold text-white/70 block mb-2">Nom Complet</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="Votre nom"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-white/70 block mb-2">Email</label>
+                <input 
+                  type="email" 
+                  required
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="votre@email.com"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-white/70 block mb-2">Message</label>
+                <textarea 
+                  required
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] h-32 resize-none transition-colors"
+                  placeholder="Comment pouvons-nous vous aider ?"
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={submitted}
+              className="w-full py-4 bg-gradient-to-r from-[var(--color-accent)] to-[#6b4229] hover:opacity-90 text-white font-bold rounded-lg shadow-lg flex justify-center items-center gap-2 transition-all"
+            >
+              {submitted ? (
+                <><CheckCircle size={20} /> Envoyé avec succès</>
+              ) : (
+                <><Send size={20} /> Envoyer le message</>
+              )}
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
