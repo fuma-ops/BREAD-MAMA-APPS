@@ -30,15 +30,42 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
 
         const sheetProducts = await fetchProductsFromSheet();
         if (sheetProducts && sheetProducts.length > 0) {
-          const formattedProducts: Product[] = sheetProducts.map(p => ({
-            id: Number(p.id),
-            name: p.nom,
-            price: Number(p.prix),
-            category: p.categorie as any,
-            description: p.description,
-            image: p.image || 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&q=80',
-            reviews: [] // Reviews not currently synced in individual columns, reset or use default
-          }));
+          const formattedProducts: Product[] = sheetProducts.map(p => {
+             const defaultFallback = defaultProducts.find(dp => dp.id === Number(p.id)) || {
+               arabicName: '',
+               emoji: '🥖',
+               quality: {
+                 ingredients: '',
+                 process: '',
+                 handmade: '',
+                 love: ''
+               },
+               tags: [],
+               available: true,
+               preparation_time: '24h'
+             };
+
+             return {
+              id: Number(p.id),
+              name: p.nom,
+              price: Number(p.prix),
+              category: p.categorie as any,
+              description: p.description,
+              images: [p.image || 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&q=80'],
+              reviews: defaultProducts.find(dp => dp.id === Number(p.id))?.reviews || [], 
+              arabicName: defaultFallback.arabicName || '',
+              emoji: defaultFallback.emoji || '🥖',
+              quality: defaultFallback.quality || {
+                 ingredients: '',
+                 process: '',
+                 handmade: '',
+                 love: ''
+               },
+              tags: defaultFallback.tags || [],
+              available: defaultFallback.available ?? true,
+              preparation_time: defaultFallback.preparation_time || '24h'
+            };
+          });
           setProducts(formattedProducts);
         } else if (!saved && sheetProducts && sheetProducts.length === 0) {
            // Si la base est completement vide sur Google Sheets, on la remplit avec nos produits par défaut

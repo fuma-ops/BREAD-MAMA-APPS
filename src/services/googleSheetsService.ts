@@ -1,7 +1,7 @@
 // src/services/googleSheetsService.ts
 
 // The URL should be set in a .env file as VITE_GOOGLE_SHEETS_API_URL
-const API_URL = import.meta.env.VITE_GOOGLE_SHEETS_API_URL;
+const API_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_API_URL;
 
 export interface OrderData {
   id: string;
@@ -178,6 +178,15 @@ export const syncProductsToSheet = async (products: any[]): Promise<boolean> => 
     return false;
   }
 
+  const mappedProducts = products.map(p => ({
+     id: p.id,
+     name: p.name,
+     price: p.price,
+     category: p.category,
+     description: p.description,
+     image: p.images && p.images.length > 0 ? p.images[0] : (p.image || '')
+  }));
+
   try {
     const response = await fetch(API_URL, {
       method: "POST",
@@ -186,7 +195,7 @@ export const syncProductsToSheet = async (products: any[]): Promise<boolean> => 
       },
       body: JSON.stringify({
         action: "SYNC_PRODUCTS",
-        products
+        products: mappedProducts
       })
     });
     const result = await response.json();
