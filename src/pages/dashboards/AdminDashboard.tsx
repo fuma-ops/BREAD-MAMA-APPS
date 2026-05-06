@@ -121,17 +121,25 @@ export function AdminDashboard() {
     });
   };
 
+  const formatWhatsAppPhone = (phone: string | number): string => {
+    let phoneStr = String(phone).replace(/\s+/g, '');
+    if (phoneStr.startsWith('+')) {
+      return phoneStr.substring(1).replace(/\D/g, '');
+    }
+    phoneStr = phoneStr.replace(/\D/g, '');
+    if (phoneStr.startsWith('0')) {
+      return '212' + phoneStr.substring(1);
+    } else if (phoneStr.length === 9 && (phoneStr.startsWith('6') || phoneStr.startsWith('7'))) {
+      return '212' + phoneStr;
+    }
+    return phoneStr;
+  };
+
   const notifyClientAndValidate = (order: any) => {
     updateOrderStatus(order.id, 'VALIDATED', 'Admin');
     const msg = encodeURIComponent(`Bonjour ${order.customerName},\n\nVotre commande Darkom (${order.id}) a bien été validée et est en cours de préparation !\nMerci pour votre confiance.`);
     
-    // Format the phone number cleanly (remove spaces, replace leading 0 with country code)
-    let phoneStr = order.customerPhone.replace(/\s+/g, '');
-    if (phoneStr.startsWith('0')) {
-      phoneStr = '212' + phoneStr.substring(1);
-    } else if (phoneStr.startsWith('+')) {
-      phoneStr = phoneStr.substring(1);
-    }
+    const phoneStr = formatWhatsAppPhone(order.customerPhone);
 
     window.open(`https://wa.me/${phoneStr}?text=${msg}`, '_blank');
   };
@@ -714,7 +722,7 @@ export function AdminDashboard() {
                       <div className="flex items-center gap-3">
                         {msg.telephone && (
                           <a 
-                            href={`https://wa.me/${String(msg.telephone).replace(/\D/g,'')}?text=${encodeURIComponent(`Bonjour ${msg.nom || ''}, suite à votre message: "${(msg.message || '').substring(0, 50)}..."`)}`}
+                            href={`https://wa.me/${formatWhatsAppPhone(msg.telephone)}?text=${encodeURIComponent(`Bonjour ${msg.nom || ''}, suite à votre message: "${(msg.message || '').substring(0, 50)}..."`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-full transition-colors relative group"
