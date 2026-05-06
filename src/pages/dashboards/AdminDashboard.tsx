@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
-import { LogOut, Plus, Trash2, Package, Activity, Copy, Edit2, Send, Check, Tags, Users } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { LogOut, Plus, Trash2, Package, Activity, Copy, Edit2, Send, Check, Tags, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useProducts } from '../../context/ProductContext';
 import { useOrders } from '../../context/OrderContext';
 import { useCategories } from '../../context/CategoryContext';
+import { fetchMessagesFromSheet } from '../../services/googleSheetsService';
 
 export function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -11,8 +12,17 @@ export function AdminDashboard() {
   const { orders, updateOrderStatus } = useOrders();
   const { categories, addCategory, deleteCategory } = useCategories();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'team' | 'production'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'team' | 'production' | 'messages'>('overview');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      fetchMessagesFromSheet().then(data => {
+        setMessages(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      });
+    }
+  }, [activeTab]);
 
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
   const activeDeliveryCount = orders.filter(o => o.status === 'READY_FOR_DELIVERY').length;
@@ -163,6 +173,13 @@ export function AdminDashboard() {
             >
               <Check size={14} className="inline mr-2" />
               Ligne de Prod
+            </button>
+            <button 
+              onClick={() => setActiveTab('messages')}
+              className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${activeTab === 'messages' ? 'bg-[var(--color-accent)] text-white' : 'text-white/50 hover:text-white'}`}
+            >
+              <MessageSquare size={14} className="inline mr-2" />
+              Messages
             </button>
           </div>
           <button onClick={logout} className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors bg-white/5 py-2 px-4 rounded-lg">
@@ -629,6 +646,55 @@ export function AdminDashboard() {
                 }).length === 0 && <div className="text-white/40 text-sm text-center py-4 bg-black/10 rounded border border-white/5 dashed">Aucune commande à prévoir</div>}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'messages' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-[var(--color-surface)] p-6 rounded-xl border border-white/5 shadow-md">
+            <div>
+              <h2 className="text-xl font-bold font-serif text-[var(--color-gold)]">Messages de Contact</h2>
+              <p className="text-white/50 text-sm mt-1">Consultez les messages envoyés depuis l'application via le formulaire de contact.</p>
+            </div>
+          </div>
+          <div className="bg-[var(--color-surface)] rounded-xl border border-white/5 shadow-md overflow-hidden">
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="bg-black/20 border-b border-white/10 text-white/50 text-xs uppercase tracking-wider">
+                  <th className="py-4 px-6 font-medium">Date</th>
+                  <th className="py-4 px-6 font-medium">Expéditeur</th>
+                  <th className="py-4 px-6 font-medium">Sujet</th>
+                  <th className="py-4 px-6 font-medium">Message</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm text-white/80 divide-y divide-white/5">
+                {messages.map((msg, idx) => (
+                  <tr key={idx} className="hover:bg-white/5 transition-colors">
+                    <td className="py-4 px-6 text-white/50 whitespace-nowrap">
+                      {msg.date ? new Date(msg.date).toLocaleString('fr-FR') : 'Date inconnue'}
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="font-bold text-white">{msg.nom}</div>
+                      <a href={`mailto:${msg.email}`} className="text-[var(--color-gold)] text-xs hover:underline">{msg.email}</a>
+                    </td>
+                    <td className="py-4 px-6 font-medium text-white/90">
+                      {msg.sujet}
+                    </td>
+                    <td className="py-4 px-6">
+                      <p className="text-white/70 line-clamp-3 text-xs leading-relaxed max-w-sm" title={msg.message}>
+                        {msg.message}
+                      </p>
+                    </td>
+                  </tr>
+                ))}
+                {messages.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-white/50">Aucun message pour le moment.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

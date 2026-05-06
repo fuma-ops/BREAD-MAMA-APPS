@@ -244,6 +244,23 @@ export const syncUsersToSheet = async (users: any[]): Promise<boolean> => {
 };
 
 /**
+ * Fetch all messages from the Google Sheet
+ */
+export const fetchMessagesFromSheet = async (): Promise<any[]> => {
+  if (!API_URL) {
+    return [];
+  }
+  try {
+    const response = await fetch(`${API_URL}?type=messages`);
+    const result = await response.json();
+    return result.status === 'success' ? result.data : [];
+  } catch (error) {
+    console.error("Error fetching messages from Google Sheets:", error);
+    return [];
+  }
+};
+
+/**
  * Add a contact message to the Google Sheet
  */
 export const addMessageToSheet = async (message: { nom: string; email: string; sujet: string; message: string }): Promise<boolean> => {

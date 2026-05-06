@@ -66,12 +66,12 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Content Section */}
         <div className="px-3 py-3 md:px-4 md:py-4 flex flex-col flex-1 relative z-10 bg-transparent">
           <div className="flex flex-col mb-1.5 md:mb-2">
-            <h3 className="text-sm md:text-base font-serif font-bold text-white leading-tight break-words">{product.name}</h3>
-            <span className="text-[10px] md:text-xs font-sans text-[var(--color-gold)]/80 mt-0.5 tracking-wide">{product.arabicName}</span>
+            <h3 className="text-base md:text-lg font-serif font-bold text-white leading-tight break-words">{product.name}</h3>
+            <span className="text-xs md:text-sm font-sans text-[var(--color-gold)] font-medium mt-0.5 tracking-wide">{product.arabicName}</span>
           </div>
           
           {product.description && (
-             <p className="text-[var(--color-gold)] text-[10px] md:text-xs leading-relaxed line-clamp-2 mb-3 font-serif italic opacity-70">
+             <p className="text-gray-200 text-xs md:text-sm leading-relaxed line-clamp-2 mb-3 font-sans">
                {product.description}
              </p>
           )}

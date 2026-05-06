@@ -69,6 +69,12 @@ function doGet(e) {
       return createJsonResponse({ status: 'success', data: data });
     }
 
+    if (type === 'messages') {
+      const sheet = ss.getSheetByName('Messages');
+      const data = getRecords(sheet);
+      return createJsonResponse({ status: 'success', data: data });
+    }
+
     return createJsonResponse({ status: 'error', message: 'Type inconnu' });
     
   } catch (error) {

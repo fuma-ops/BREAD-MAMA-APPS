@@ -10,13 +10,13 @@
   --color-text-secondary: #E8E8E8;
   
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
-  --font-sans: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background-color: var(--color-primary);
   color: var(--color-text-primary);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
 }
 
 h1, h2, h3, h4, h5, h6 {

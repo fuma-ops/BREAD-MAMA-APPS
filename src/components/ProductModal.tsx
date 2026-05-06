@@ -118,18 +118,18 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
               <div>
                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-gold)]">{product.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-white/50">{product.arabicName}</span>
+                  <span className="text-sm font-sans font-medium text-white/80">{product.arabicName}</span>
                   <span className="text-white/20">•</span>
                   <span className="text-xs font-bold text-[var(--color-accent)] tracking-wider px-2 py-0.5 bg-[var(--color-accent)]/10 rounded-full">
                     {product.category}
                   </span>
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white shrink-0">
+              <div className="text-3xl font-bold text-white shrink-0 font-sans">
                 {product.price} <span className="text-lg text-white/50">DH</span>
               </div>
             </div>
-            <p className="text-lg text-white/80 mt-4 leading-relaxed">{product.description}</p>
+            <p className="text-lg text-white mt-4 leading-relaxed font-sans">{product.description}</p>
           </div>
 
           {/* Section 1: Qualité & Ingrédients */}
