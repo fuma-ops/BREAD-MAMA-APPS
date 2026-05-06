@@ -657,6 +657,16 @@ export function AdminDashboard() {
               <h2 className="text-xl font-bold font-serif text-[var(--color-gold)]">Messages de Contact</h2>
               <p className="text-white/50 text-sm mt-1">Consultez les messages envoyés depuis l'application via le formulaire de contact.</p>
             </div>
+            <button 
+              onClick={() => {
+                fetchMessagesFromSheet().then(data => {
+                  setMessages(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+                });
+              }}
+              className="bg-[var(--color-accent)] hover:bg-[#A86F4A] text-white px-4 py-2 rounded font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-colors shrink-0"
+            >
+              Rafraîchir
+            </button>
           </div>
           <div className="bg-[var(--color-surface)] rounded-xl border border-white/5 shadow-md overflow-hidden">
             <table className="w-full text-left border-collapse min-w-[600px]">
