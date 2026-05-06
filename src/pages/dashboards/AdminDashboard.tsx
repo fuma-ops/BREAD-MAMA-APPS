@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useProducts } from '../../context/ProductContext';
 import { useOrders } from '../../context/OrderContext';
 import { useCategories } from '../../context/CategoryContext';
-import { fetchMessagesFromSheet } from '../../services/googleSheetsService';
+import { fetchMessagesFromSheet, deleteMessageFromSheet } from '../../services/googleSheetsService';
 
 export function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -676,17 +676,23 @@ export function AdminDashboard() {
                   <th className="py-4 px-6 font-medium">Expéditeur</th>
                   <th className="py-4 px-6 font-medium">Sujet</th>
                   <th className="py-4 px-6 font-medium">Message</th>
+                  <th className="py-4 px-6 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-white/80 divide-y divide-white/5">
                 {messages.map((msg, idx) => (
-                  <tr key={idx} className="hover:bg-white/5 transition-colors">
+                  <tr key={msg.id || idx} className="hover:bg-white/5 transition-colors">
                     <td className="py-4 px-6 text-white/50 whitespace-nowrap">
                       {msg.date ? new Date(msg.date).toLocaleString('fr-FR') : 'Date inconnue'}
                     </td>
                     <td className="py-4 px-6">
-                      <div className="font-bold text-white">{msg.nom}</div>
-                      <a href={`mailto:${msg.email}`} className="text-[var(--color-gold)] text-xs hover:underline">{msg.email}</a>
+                      <div className="font-bold text-white mb-0.5">{msg.nom}</div>
+                      {msg.telephone && (
+                        <div className="text-[var(--color-gold)] text-xs mb-0.5">Tél: {msg.telephone}</div>
+                      )}
+                      {msg.email && (
+                         <a href={`mailto:${msg.email}`} className="text-white/50 text-xs hover:underline block">{msg.email}</a>
+                      )}
                     </td>
                     <td className="py-4 px-6 font-medium text-white/90">
                       {msg.sujet}
@@ -696,11 +702,46 @@ export function AdminDashboard() {
                         {msg.message}
                       </p>
                     </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        {msg.telephone && (
+                          <a 
+                            href={`https://wa.me/${msg.telephone.replace(/\D/g,'')}?text=${encodeURIComponent(`Bonjour ${msg.nom}, suite à votre message: "${msg.message.substring(0, 50)}..."`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-full transition-colors relative group"
+                          >
+                            <MessageSquare size={14} />
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">WhatsApp</span>
+                          </a>
+                        )}
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm('Voulez-vous vraiment supprimer ce message ?')) {
+                              if (!msg.id) {
+                                alert("Ce message ne peut pas être supprimé (ID manquant).");
+                                return;
+                              }
+                              const success = await deleteMessageFromSheet(msg.id);
+                              if (success) {
+                                setMessages(prev => prev.filter(m => m.id !== msg.id));
+                              } else {
+                                alert("Erreur lors de la suppression du message.");
+                              }
+                            }
+                          }}
+                          className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 p-2 rounded-full transition-colors relative group"
+                        >
+                          <Trash2 size={14} />
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Supprimer</span>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {messages.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-white/50">Aucun message pour le moment.</td>
+                    <td colSpan={5} className="py-8 text-center text-white/50">Aucun message pour le moment.</td>
                   </tr>
                 )}
               </tbody>

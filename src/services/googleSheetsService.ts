@@ -263,7 +263,7 @@ export const fetchMessagesFromSheet = async (): Promise<any[]> => {
 /**
  * Add a contact message to the Google Sheet
  */
-export const addMessageToSheet = async (message: { nom: string; email: string; sujet: string; message: string }): Promise<boolean> => {
+export const addMessageToSheet = async (message: { nom: string; email: string; telephone: string; sujet: string; message: string }): Promise<boolean> => {
   if (!API_URL) {
     console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
     return false;
@@ -284,6 +284,25 @@ export const addMessageToSheet = async (message: { nom: string; email: string; s
     return result.status === "success";
   } catch (error) {
     console.error("Error adding message to sheet:", error);
+    return false;
+  }
+};
+
+/**
+ * Delete a contact message from the Google Sheet
+ */
+export const deleteMessageFromSheet = async (id: string): Promise<boolean> => {
+  if (!API_URL) return false;
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "DELETE_MESSAGE", id })
+    });
+    const result = await response.json();
+    return result.status === "success";
+  } catch (error) {
+    console.error("Error deleting message from sheet:", error);
     return false;
   }
 };

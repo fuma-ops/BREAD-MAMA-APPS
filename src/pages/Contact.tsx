@@ -10,6 +10,7 @@ export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    telephone: '',
     message: ''
   });
 
@@ -21,11 +22,12 @@ export default function Contact() {
       await addMessageToSheet({
         nom: formData.name,
         email: formData.email,
+        telephone: formData.telephone,
         sujet: "Contact Site Web",
         message: formData.message
       });
       setSubmitted(true);
-      setFormData({ name: '', email: '', message: '' });
+      setFormData({ name: '', email: '', telephone: '', message: '' });
       setTimeout(() => setSubmitted(false), 5000);
     } catch (error) {
       console.error("Error submitting contact form", error);
@@ -87,7 +89,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <h3 className="font-bold text-white mb-1">Téléphone / WhatsApp</h3>
-                  <p className="text-white/60">+212 600 000 000<br/>Lun-Sam, 9h-20h</p>
+                  <p className="text-white/60">+212 646 34 07 29<br/>Lun-Sam, 9h-20h</p>
                 </div>
               </div>
 
@@ -129,13 +131,25 @@ export default function Contact() {
               </div>
 
               <div>
-                <label className="text-sm font-bold text-white/70 block mb-2">Email</label>
+                <label className="text-sm font-bold text-white/70 block mb-2">Téléphone (WhatsApp)</label>
+                <input 
+                  type="tel" 
+                  name="telephone"
+                  value={formData.telephone}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="+212 6..."
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-white/70 block mb-2">Email (Optionnel)</label>
                 <input 
                   type="email" 
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-gold)] transition-colors"
                   placeholder="votre@email.com"
                 />

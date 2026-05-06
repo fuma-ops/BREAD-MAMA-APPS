@@ -44,7 +44,7 @@ export function Footer() {
           <div className="flex gap-4">
             <span className="cursor-pointer hover:text-white transition-colors">Privacy Policy</span>
             <span className="cursor-pointer hover:text-white transition-colors">Terms of Service</span>
-            <span className="cursor-pointer hover:text-white transition-colors font-medium">WhatsApp: +212 6XX XXX XXX</span>
+            <span className="cursor-pointer hover:text-white transition-colors font-medium">WhatsApp: +212 6 46 34 07 29</span>
           </div>
         </div>
       </div>

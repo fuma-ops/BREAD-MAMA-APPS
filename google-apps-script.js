@@ -10,7 +10,7 @@ const SHEETS_CONFIG = {
   'Produits': ['id', 'nom', 'nom_arabe', 'prix', 'categorie', 'description', 'image'],
   'Utilisateurs': ['id', 'nom', 'role', 'code'],
   'Logs': ['timestamp', 'actor', 'actionType', 'details'],
-  'Messages': ['date', 'nom', 'email', 'sujet', 'message']
+  'Messages': ['id', 'date', 'nom', 'email', 'telephone', 'sujet', 'message']
 };
 
 /**
@@ -204,13 +204,29 @@ function doPost(e) {
       const msg = payload.message;
       
       sheet.appendRow([
+        generateId(),
         new Date().toISOString(),
         msg.nom || '',
         msg.email || '',
+        msg.telephone || '',
         msg.sujet || '',
         msg.message || ''
       ]);
       return createJsonResponse({ status: 'success' });
+    }
+
+    if (action === 'DELETE_MESSAGE') {
+      const sheet = ss.getSheetByName('Messages');
+      const id = payload.id;
+      
+      const data = sheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0] == id) { // La colonne 1 est l'ID
+          sheet.deleteRow(i + 1);
+          return createJsonResponse({ status: 'success', message: 'Message supprimé' });
+        }
+      }
+      return createJsonResponse({ status: 'error', message: 'Message non trouvé' });
     }
 
     return createJsonResponse({ status: 'error', message: 'Action inconnue : ' + action });
