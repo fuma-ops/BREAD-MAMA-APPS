@@ -129,9 +129,9 @@ function doPost(e) {
       // Trouver la ligne avec l'ID (la colonne 1 est l'ID)
       for (let i = 1; i < data.length; i++) {
         if (data[i][0] == id) { // Double égal voulu pour ignorer les types string/number
-          // Mettre à jour le statut (colonne 8) et l'historique (colonne 9)
-          sheet.getRange(i + 1, 8).setValue(status);
-          sheet.getRange(i + 1, 9).setValue(historyStr);
+          // Mettre à jour le statut (colonne 9) et l'historique (colonne 10)
+          sheet.getRange(i + 1, 9).setValue(status);
+          sheet.getRange(i + 1, 10).setValue(historyStr);
           return createJsonResponse({ status: 'success', message: 'Statut mis à jour' });
         }
       }

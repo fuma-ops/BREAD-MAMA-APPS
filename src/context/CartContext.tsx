@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem } from '../types';
+import { parsePrice } from '../utils/price';
 
 interface CartContextType {
   items: CartItem[];
@@ -20,7 +21,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('darkom_cart');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((item: CartItem) => ({
+          ...item,
+          price: parsePrice(item.price)
+        }));
+      }
+      return [];
     } catch (e) {
       console.warn('Failed to read from localStorage', e);
       return [];
@@ -69,7 +77,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([]);
   };
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
   const total = items.length > 0 ? subtotal + deliveryFee : 0;
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const isEmpty = items.length === 0;

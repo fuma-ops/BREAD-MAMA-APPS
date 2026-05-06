@@ -17,7 +17,9 @@ export function DeliveryDashboard() {
     return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
   };
 
-  const todaysUpcoming = upcomingOrders.filter(o => !isToday(new Date(o.createdAt)));
+  // Orders created before today are for today. Orders created today are for tomorrow.
+  const upcomingToday = upcomingOrders.filter(o => !isToday(new Date(o.createdAt)));
+  const upcomingTomorrow = upcomingOrders.filter(o => isToday(new Date(o.createdAt)));
 
   const revenueToCollect = deliveryOrders.reduce((acc, order) => acc + order.total, 0);
   const revenueCollected = historyOrders.reduce((acc, order) => acc + order.total, 0);
@@ -105,22 +107,44 @@ export function DeliveryDashboard() {
             ))
           )}
 
-          {todaysUpcoming.length > 0 && (
+          {upcomingToday.length > 0 && (
             <div className="mt-8">
               <h2 className="text-lg font-bold text-white/50 mb-4 flex items-center gap-2">
-                <Truck size={18} /> À Prévoir Aujourd'hui ({todaysUpcoming.length})
+                <Truck size={18} /> À Prévoir pour Aujourd'hui ({upcomingToday.length})
               </h2>
               <div className="space-y-4">
-                {todaysUpcoming.map(order => (
+                {upcomingToday.map(order => (
                   <div key={order.id} className="bg-black/20 p-4 rounded-xl border border-white/5 border-dashed opacity-50 select-none">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[var(--color-gold)] font-mono font-bold text-sm">#{order.id}</span>
-                      <span className="px-2 py-1 bg-white/5 text-white/40 rounded text-[10px] uppercase font-bold tracking-wider">
-                        EN PRÉPARATION
+                      <span className={`px-2 py-1 bg-white/5 text-white/40 rounded text-[10px] uppercase font-bold tracking-wider`}>
+                        {order.status === 'VALIDATED' ? 'EN ATTENTE CHEF' : 'EN PRÉPARATION'}
                       </span>
                     </div>
                     <div className="text-white/60 text-sm">{order.customerAddress.split(',')[0]}... ({order.customerName})</div>
-                    <div className="text-[10px] text-white/40 mt-1">Sera prêt bientôt. Vous le verrez actif après validation du Chef.</div>
+                    <div className="text-[10px] text-white/40 mt-1">Sera prêt aujourd'hui. Vous le verrez actif après validation du Chef.</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {upcomingTomorrow.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-bold text-white/30 mb-4 flex items-center gap-2">
+                <Truck size={18} /> Demain ({upcomingTomorrow.length})
+              </h2>
+              <div className="space-y-4">
+                {upcomingTomorrow.map(order => (
+                  <div key={order.id} className="bg-black/40 p-4 rounded-xl border border-white/5 border-dashed opacity-30 select-none">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[var(--color-gold)] font-mono font-bold text-sm">#{order.id}</span>
+                      <span className={`px-2 py-1 bg-white/5 text-white/40 rounded text-[10px] uppercase font-bold tracking-wider`}>
+                        {order.status === 'VALIDATED' ? 'EN ATTENTE CHEF' : 'EN PRÉPARATION'}
+                      </span>
+                    </div>
+                    <div className="text-white/60 text-sm">{order.customerAddress.split(',')[0]}... ({order.customerName})</div>
+                    <div className="text-[10px] text-white/40 mt-1">Livraison prévue pour demain.</div>
                   </div>
                 ))}
               </div>

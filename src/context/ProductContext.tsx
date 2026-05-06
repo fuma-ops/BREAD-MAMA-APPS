@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product } from '../types';
 import { products as defaultProducts } from '../data/products';
 import { fetchProductsFromSheet, syncProductsToSheet } from '../services/googleSheetsService';
+import { parsePrice } from '../utils/price';
 
 interface ProductContextType {
   products: Product[];
@@ -48,7 +49,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
              return {
               id: Number(p.id),
               name: p.nom,
-              price: Number(String(p.prix).replace(/[^\d.,]/g, '').replace(',', '.')),
+              price: parsePrice(p.prix),
               category: p.categorie as any,
               description: p.description,
               images: [p.image || 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&q=80'],
