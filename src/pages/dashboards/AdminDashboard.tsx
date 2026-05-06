@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { LogOut, Plus, Trash2, Package, Activity, Copy, Edit2, Send, Check, Tags, Users, MessageSquare } from 'lucide-react';
+import { LogOut, Plus, Trash2, Package, Activity, Copy, Edit2, Send, Check, Tags, Users, MessageSquare, Phone, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useProducts } from '../../context/ProductContext';
 import { useOrders } from '../../context/OrderContext';
@@ -239,8 +239,41 @@ export function AdminDashboard() {
                        <span className="font-mono text-[var(--color-gold)]">#{order.id}</span>
                        <div className="text-[10px] text-white/40 mt-1">{new Date(order.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</div>
                     </td>
-                    <td className="py-4 px-2">{order.customerName} <br/><span className="text-xs text-white/40">{order.customerAddress.substring(0, 30)}...</span></td>
-                    <td className="py-4 px-2 font-bold">{order.total} DH</td>
+                    <td className="py-4 px-2">
+                      <div className="font-bold">{order.customerName}</div>
+                      <div className="text-xs text-white/40 mb-2">{order.customerAddress.substring(0, 30)}...</div>
+                      
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-mono text-white/70">{order.customerPhone}</span>
+                        {order.customerPhone && (
+                          <>
+                            <a href={`tel:${order.customerPhone}`} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-full hover:bg-blue-500/40 transition-colors" title="Appeler">
+                              <Phone size={12} />
+                            </a>
+                            <a 
+                              href={`https://wa.me/${formatWhatsAppPhone(order.customerPhone)}?text=${encodeURIComponent(`Bonjour ${order.customerName}, suite à votre commande #${order.id} chez Bread Mama...`)}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="p-1.5 bg-green-500/20 text-green-400 rounded-full hover:bg-green-500/40 transition-colors" 
+                              title="WhatsApp"
+                            >
+                              <MessageCircle size={12} />
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-2">
+                      <div className="font-bold mb-2">{order.total} DH</div>
+                      <div className="text-xs text-white/50 space-y-1">
+                        {order.items?.map((item, idx) => (
+                          <div key={idx} className="flex gap-1 items-start">
+                            <span>{item.quantity}x</span>
+                            <span className="truncate max-w-[120px] inline-block">{item.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
                     <td className="py-4 px-2">
                       <div className="flex flex-col gap-1">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase w-fit ${

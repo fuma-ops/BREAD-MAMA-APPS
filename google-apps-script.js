@@ -102,18 +102,28 @@ function doPost(e) {
       const sheet = ss.getSheetByName('Commandes');
       const order = payload.order;
       
-      const rowData = [
-        order.id || generateId(),
-        order.date || new Date().toISOString(),
-        order.client || '',
-        order.telephone || '',
-        order.adresse || '',
-        order.quantite || 0,
-        typeof order.produits === 'string' ? order.produits : JSON.stringify(order.produits || []),
-        order.total || 0,
-        order.statut || 'Nouveau',
-        order.historique || '[]'
-      ];
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const rowData = new Array(headers.length).fill('');
+      
+      const orderMap = {
+        'id': order.id || generateId(),
+        'date': order.date || new Date().toISOString(),
+        'client': order.client || '',
+        'telephone': order.telephone || '',
+        'adresse': order.adresse || '',
+        'quantite': order.quantite || 0,
+        'produits': typeof order.produits === 'string' ? order.produits : JSON.stringify(order.produits || []),
+        'total': order.total || 0,
+        'statut': order.statut || 'PENDING',
+        'historique': order.historique || '[]'
+      };
+      
+      for (let i = 0; i < headers.length; i++) {
+        const header = headers[i].toLowerCase();
+        if (orderMap[header] !== undefined) {
+          rowData[i] = orderMap[header];
+        }
+      }
       
       sheet.appendRow(rowData);
       return createJsonResponse({ status: 'success', message: 'Commande ajoutée' });
@@ -126,12 +136,24 @@ function doPost(e) {
       const historyStr = payload.historyStr;
       
       const data = sheet.getDataRange().getValues();
-      // Trouver la ligne avec l'ID (la colonne 1 est l'ID)
+      const headers = data[0].map(h => h.toString().toLowerCase());
+      
+      const idColIndex = headers.indexOf('id');
+      const statusColIndex = headers.indexOf('statut');
+      const historyColIndex = headers.indexOf('historique');
+      
+      if (idColIndex === -1) {
+         return createJsonResponse({ status: 'error', message: 'Colonne id non trouvée' });
+      }
+      
       for (let i = 1; i < data.length; i++) {
-        if (data[i][0] == id) { // Double égal voulu pour ignorer les types string/number
-          // Mettre à jour le statut (colonne 9) et l'historique (colonne 10)
-          sheet.getRange(i + 1, 9).setValue(status);
-          sheet.getRange(i + 1, 10).setValue(historyStr);
+        if (data[i][idColIndex] == id) { 
+          if (statusColIndex !== -1) {
+            sheet.getRange(i + 1, statusColIndex + 1).setValue(status);
+          }
+          if (historyColIndex !== -1) {
+            sheet.getRange(i + 1, historyColIndex + 1).setValue(historyStr);
+          }
           return createJsonResponse({ status: 'success', message: 'Statut mis à jour' });
         }
       }

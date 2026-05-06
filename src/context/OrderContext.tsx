@@ -41,13 +41,32 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         if (sheetOrders && sheetOrders.length > 0) {
           // Convert sheet orders back to app's Order type
           const formattedOrders: Order[] = sheetOrders.reverse().map(o => {
+            let status = (o.statut || '').toString();
+            let historique = (o.historique || '').toString();
+            let totalVal = o.total;
+            
+            // Auto-correct if columns shifted and `status` contains history JSON
+            if (status.trim().startsWith('[') && status.trim().endsWith(']')) {
+               historique = status;
+               status = o.total || o.historique || 'PENDING'; // total might have caught the status
+               // if `total` caught the status, something else might have caught the total... like `produits`
+               if (status === 'PENDING' || status === 'VALIDATED' || status === 'IN_PREPARATION' || status === 'READY_FOR_DELIVERY' || status === 'DELIVERED') {
+                  // status recovered
+                  if (typeof o.produits === 'number' || !isNaN(Number(o.produits))) {
+                     totalVal = Number(o.produits);
+                  }
+               } else {
+                  status = 'PENDING';
+               }
+            }
+
             let history = [];
             try {
-              history = JSON.parse(o.historique || '[]');
+              history = JSON.parse(historique || '[]');
             } catch(e) {}
             
             if (history.length === 0) {
-              history = [{ status: (o.statut || 'PENDING') as OrderStatus, timestamp: o.date || new Date().toISOString(), actor: 'Système' }];
+              history = [{ status: (status || 'PENDING') as OrderStatus, timestamp: o.date || new Date().toISOString(), actor: 'Système' }];
             }
 
             return {
@@ -55,11 +74,11 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
               customerName: o.client,
               customerPhone: o.telephone,
               customerAddress: o.adresse,
-              items: JSON.parse(o.produits || '[]'),
-              subtotal: Number(o.total || 0),
+              items: JSON.parse(typeof o.produits === 'string' && o.produits.startsWith('[') ? o.produits : '[]'),
+              subtotal: Number(totalVal || 0),
               deliveryFee: 15,
-              total: Number(o.total || 0),
-              status: (o.statut || 'PENDING') as OrderStatus,
+              total: Number(totalVal || 0),
+              status: (status || 'PENDING') as OrderStatus,
               createdAt: o.date || new Date().toISOString(),
               history: history
             };
