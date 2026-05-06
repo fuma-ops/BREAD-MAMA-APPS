@@ -81,7 +81,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <div className="flex items-center gap-0.5 text-[9px] md:text-[10px] text-yellow-500 mb-1">
                 {'★'.repeat(5)} <span className="text-white/40 ml-1 font-sans">({product.reviews.length * 24})</span>
               </div>
-              <span className="text-sm md:text-lg font-bold text-white tracking-widest">{product.price.toFixed(2)} <span className="text-[10px] md:text-xs text-[var(--color-gold)] font-sans">DH</span></span>
+              <span className="text-sm md:text-lg font-bold text-white tracking-widest">{(Number(product.price) || 0).toFixed(2)} <span className="text-[10px] md:text-xs text-[var(--color-gold)] font-sans">DH</span></span>
             </div>
             
             {/* Quick Add Action */}

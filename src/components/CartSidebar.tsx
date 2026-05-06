@@ -79,7 +79,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-serif font-bold text-[var(--color-text-primary)] text-sm leading-tight">{item.name}</h4>
-                      <p className="text-[var(--color-gold)] text-[13px] font-bold mt-0.5">{item.price.toFixed(2)} DH</p>
+                      <p className="text-[var(--color-gold)] text-[13px] font-bold mt-0.5">{(Number(item.price) || 0).toFixed(2)} DH</p>
                     </div>
                     <button 
                       onClick={() => removeFromCart(item.id)}
@@ -115,16 +115,16 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
           <div className="border-t border-white/10 p-4 sm:p-5 flex flex-col gap-3">
             <div className="flex justify-between items-center text-white/70 text-[13px]">
               <span>Subtotal</span>
-              <span>{subtotal.toFixed(2)} DH</span>
+              <span>{(Number(subtotal) || 0).toFixed(2)} DH</span>
             </div>
             <div className="flex justify-between items-center text-white/70 text-[13px]">
               <span>Livraison</span>
-              <span>{deliveryFee.toFixed(2)} DH</span>
+              <span>{(Number(deliveryFee) || 0).toFixed(2)} DH</span>
             </div>
             
             <div className="flex justify-between items-center text-[var(--color-gold)] font-bold text-lg pt-1 border-t border-white/10 mt-1">
               <span>Total</span>
-              <span>{total.toFixed(2)} DH</span>
+              <span>{(Number(total) || 0).toFixed(2)} DH</span>
             </div>
 
             <div className="flex flex-col gap-2 mt-4">

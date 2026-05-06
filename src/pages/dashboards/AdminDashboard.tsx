@@ -352,7 +352,7 @@ export function AdminDashboard() {
                       </span>
                     </td>
                     <td className="py-4 px-6 font-bold text-[var(--color-gold)]">
-                      {product.price.toFixed(2)} DH
+                      {(Number(product.price) || 0).toFixed(2)} DH
                     </td>
                     <td className="py-4 px-6 text-right">
                        <div className="flex justify-end gap-1">
