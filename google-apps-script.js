@@ -10,7 +10,7 @@ const SHEETS_CONFIG = {
   'Produits': ['id', 'nom', 'nom_arabe', 'prix', 'categorie', 'description', 'image'],
   'Utilisateurs': ['id', 'nom', 'role', 'code'],
   'Logs': ['timestamp', 'actor', 'actionType', 'details'],
-  'Messages': ['id', 'date', 'nom', 'email', 'telephone', 'sujet', 'message']
+  'Messages': ['id', 'date', 'nom', 'email', 'telephone', 'sujet', 'message', 'status']
 };
 
 /**
@@ -210,7 +210,8 @@ function doPost(e) {
         msg.email || '',
         msg.telephone || '',
         msg.sujet || '',
-        msg.message || ''
+        msg.message || '',
+        'NEW'
       ]);
       return createJsonResponse({ status: 'success' });
     }
@@ -224,6 +225,20 @@ function doPost(e) {
         if (data[i][0] == id) { // La colonne 1 est l'ID
           sheet.deleteRow(i + 1);
           return createJsonResponse({ status: 'success', message: 'Message supprimé' });
+        }
+      }
+      return createJsonResponse({ status: 'error', message: 'Message non trouvé' });
+    }
+
+    if (action === 'UPDATE_MESSAGE_STATUS') {
+      const sheet = ss.getSheetByName('Messages');
+      const { id, status } = payload;
+      
+      const data = sheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0] == id) { // ID is in column A (index 0)
+          sheet.getRange(i + 1, 8).setValue(status); // Column H (index 7, 1-based is 8)
+          return createJsonResponse({ status: 'success', message: 'Statut du message mis à jour' });
         }
       }
       return createJsonResponse({ status: 'error', message: 'Message non trouvé' });

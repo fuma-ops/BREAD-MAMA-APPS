@@ -307,3 +307,22 @@ export const deleteMessageFromSheet = async (id: string): Promise<boolean> => {
   }
 };
 
+/**
+ * Update the status of a contact message
+ */
+export const updateMessageStatusInSheet = async (id: string, status: 'NEW' | 'SEEN' | 'REPLIED'): Promise<boolean> => {
+  if (!API_URL) return false;
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "UPDATE_MESSAGE_STATUS", id, status })
+    });
+    const result = await response.json();
+    return result.status === "success";
+  } catch (error) {
+    console.error("Error updating message status:", error);
+    return false;
+  }
+};
+

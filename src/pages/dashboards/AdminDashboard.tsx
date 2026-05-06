@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useProducts } from '../../context/ProductContext';
 import { useOrders } from '../../context/OrderContext';
 import { useCategories } from '../../context/CategoryContext';
-import { fetchMessagesFromSheet, deleteMessageFromSheet } from '../../services/googleSheetsService';
+import { fetchMessagesFromSheet, deleteMessageFromSheet, updateMessageStatusInSheet } from '../../services/googleSheetsService';
 
 export function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -692,72 +692,108 @@ export function AdminDashboard() {
                   <th className="py-4 px-6 font-medium">Expéditeur</th>
                   <th className="py-4 px-6 font-medium">Sujet</th>
                   <th className="py-4 px-6 font-medium">Message</th>
+                  <th className="py-4 px-6 font-medium">Statut</th>
                   <th className="py-4 px-6 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-white/80 divide-y divide-white/5">
-                {messages.map((msg, idx) => (
-                  <tr key={msg.id || idx} className="hover:bg-white/5 transition-colors">
-                    <td className="py-4 px-6 text-white/50 whitespace-nowrap">
-                      {msg.date ? new Date(msg.date).toLocaleString('fr-FR') : 'Date inconnue'}
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-white mb-0.5">{msg.nom}</div>
-                      {msg.telephone && (
-                        <div className="text-[var(--color-gold)] text-xs mb-0.5">Tél: {msg.telephone}</div>
-                      )}
-                      {msg.email && (
-                         <a href={`mailto:${msg.email}`} className="text-white/50 text-xs hover:underline block">{msg.email}</a>
-                      )}
-                    </td>
-                    <td className="py-4 px-6 font-medium text-white/90">
-                      {msg.sujet}
-                    </td>
-                    <td className="py-4 px-6">
-                      <p className="text-white/70 line-clamp-3 text-xs leading-relaxed max-w-sm" title={msg.message}>
-                        {msg.message}
-                      </p>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
+                {messages.map((msg, idx) => {
+                  const isNew = !msg.status || msg.status === 'NEW';
+                  const isReplied = msg.status === 'REPLIED';
+                  const isSeen = msg.status === 'SEEN';
+
+                  return (
+                    <tr key={msg.id || idx} className={`hover:bg-white/5 transition-colors ${isNew ? 'bg-[var(--color-accent)]/5' : ''}`}>
+                      <td className="py-4 px-6 text-white/50 whitespace-nowrap">
+                        {msg.date ? new Date(msg.date).toLocaleString('fr-FR') : 'Date inconnue'}
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className={`font-bold mb-0.5 ${isNew ? 'text-[var(--color-gold)]' : 'text-white'}`}>{msg.nom}</div>
                         {msg.telephone && (
-                          <a 
-                            href={`https://wa.me/${formatWhatsAppPhone(msg.telephone)}?text=${encodeURIComponent(`Bonjour ${msg.nom || ''}, suite à votre message: "${(msg.message || '').substring(0, 50)}..."`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-full transition-colors relative group"
-                          >
-                            <MessageSquare size={14} />
-                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">WhatsApp</span>
-                          </a>
+                          <div className={`${isNew ? 'text-white/80' : 'text-[var(--color-gold)]'} text-xs mb-0.5`}>Tél: {msg.telephone}</div>
                         )}
-                        <button 
-                          onClick={async () => {
-                            if (window.confirm('Voulez-vous vraiment supprimer ce message ?')) {
-                              if (!msg.id) {
-                                alert("Ce message ne peut pas être supprimé (ID manquant).");
-                                return;
+                        {msg.email && (
+                          <a href={`mailto:${msg.email}`} className="text-white/50 text-xs hover:underline block">{msg.email}</a>
+                        )}
+                      </td>
+                      <td className={`py-4 px-6 font-medium ${isNew ? 'text-white' : 'text-white/70'}`}>
+                        {msg.sujet}
+                      </td>
+                      <td className="py-4 px-6">
+                        <p className={`${isNew ? 'text-white/90 font-medium' : 'text-white/70'} line-clamp-3 text-xs leading-relaxed max-w-sm`} title={msg.message}>
+                          {msg.message}
+                        </p>
+                      </td>
+                      <td className="py-4 px-6">
+                        {isNew && <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-[10px] rounded font-bold uppercase tracking-wider">Nouveau</span>}
+                        {isSeen && <span className="px-2 py-1 bg-white/10 text-white/50 text-[10px] rounded font-bold uppercase tracking-wider">Lu</span>}
+                        {isReplied && <span className="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] rounded font-bold uppercase tracking-wider">Répondu</span>}
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          {isNew && (
+                            <button
+                              onClick={async () => {
+                                if (!msg.id) return;
+                                const success = await updateMessageStatusInSheet(msg.id, 'SEEN');
+                                if (success) {
+                                  setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'SEEN' } : m));
+                                }
+                              }}
+                              className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors relative group"
+                            >
+                              <Check size={14} />
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Marquer lu</span>
+                            </button>
+                          )}
+                          {msg.telephone && (
+                            <a 
+                              href={`https://wa.me/${formatWhatsAppPhone(msg.telephone)}?text=${encodeURIComponent(`Bonjour ${msg.nom || ''}, suite à votre message: "${(msg.message || '').substring(0, 50)}..."`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={async () => {
+                                if (msg.id && !isReplied) {
+                                  // Auto-mark as replied when clicking WhatsApp
+                                  const success = await updateMessageStatusInSheet(msg.id, 'REPLIED');
+                                  if (success) {
+                                    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'REPLIED' } : m));
+                                  }
+                                }
+                              }}
+                              className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-full transition-colors relative group"
+                            >
+                              <MessageSquare size={14} />
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">WhatsApp</span>
+                            </a>
+                          )}
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm('Voulez-vous vraiment supprimer ce message ?')) {
+                                if (!msg.id) {
+                                  alert("Ce message ne peut pas être supprimé (ID manquant).");
+                                  return;
+                                }
+                                const success = await deleteMessageFromSheet(msg.id);
+                                if (success) {
+                                  setMessages(prev => prev.filter(m => m.id !== msg.id));
+                                } else {
+                                  alert("Erreur lors de la suppression du message.");
+                                }
                               }
-                              const success = await deleteMessageFromSheet(msg.id);
-                              if (success) {
-                                setMessages(prev => prev.filter(m => m.id !== msg.id));
-                              } else {
-                                alert("Erreur lors de la suppression du message.");
-                              }
-                            }
-                          }}
-                          className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 p-2 rounded-full transition-colors relative group"
-                        >
-                          <Trash2 size={14} />
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Supprimer</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                            }}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 p-2 rounded-full transition-colors relative group"
+                          >
+                            <Trash2 size={14} />
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Supprimer</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {messages.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-white/50">Aucun message pour le moment.</td>
+                    <td colSpan={6} className="py-8 text-center text-white/50">Aucun message pour le moment.</td>
                   </tr>
                 )}
               </tbody>
