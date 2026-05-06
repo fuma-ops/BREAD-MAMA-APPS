@@ -181,6 +181,7 @@ export const syncProductsToSheet = async (products: any[]): Promise<boolean> => 
   const mappedProducts = products.map(p => ({
      id: p.id,
      nom: p.name,
+     nom_arabe: p.arabicName || '',
      prix: p.price,
      categorie: p.category,
      description: p.description,
@@ -202,6 +203,42 @@ export const syncProductsToSheet = async (products: any[]): Promise<boolean> => 
     return result.status === "success";
   } catch (error) {
     console.error("Error syncing products to sheet:", error);
+    return false;
+  }
+};
+
+/**
+ * Fetch all users from the Google Sheet
+ */
+export const fetchUsersFromSheet = async (): Promise<any[]> => {
+  if (!API_URL) {
+    return [];
+  }
+  try {
+    const response = await fetch(`${API_URL}?type=users`);
+    const result = await response.json();
+    return result.status === 'success' ? result.data : [];
+  } catch (error) {
+    console.error("Error fetching users from Google Sheets:", error);
+    return [];
+  }
+};
+
+/**
+ * Sync users list to Google Sheets
+ */
+export const syncUsersToSheet = async (users: any[]): Promise<boolean> => {
+  if (!API_URL) return false;
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "SYNC_USERS", users })
+    });
+    const result = await response.json();
+    return result.status === "success";
+  } catch (error) {
+    console.error("Error syncing users to sheet:", error);
     return false;
   }
 };

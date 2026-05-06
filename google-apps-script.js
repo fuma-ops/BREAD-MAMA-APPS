@@ -7,7 +7,8 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId(); // Utilise
 // Configurations des feuilles et de leurs en-têtes
 const SHEETS_CONFIG = {
   'Commandes': ['id', 'date_creation', 'client', 'telephone', 'adresse', 'produits', 'total', 'statut', 'historique'],
-  'Produits': ['id', 'nom', 'prix', 'categorie', 'description', 'image'],
+  'Produits': ['id', 'nom', 'nom_arabe', 'prix', 'categorie', 'description', 'image'],
+  'Utilisateurs': ['id', 'nom', 'role', 'code'],
   'Logs': ['timestamp', 'actor', 'actionType', 'details'],
   'Messages': ['date', 'nom', 'email', 'sujet', 'message']
 };
@@ -58,6 +59,12 @@ function doGet(e) {
     
     if (type === 'orders') {
       const sheet = ss.getSheetByName('Commandes');
+      const data = getRecords(sheet);
+      return createJsonResponse({ status: 'success', data: data });
+    }
+    
+    if (type === 'users') {
+      const sheet = ss.getSheetByName('Utilisateurs');
       const data = getRecords(sheet);
       return createJsonResponse({ status: 'success', data: data });
     }
@@ -152,16 +159,38 @@ function doPost(e) {
         const rows = products.map(p => [
           p.id || generateId(),
           p.nom || '',
+          p.nom_arabe || '',
           p.prix || 0,
           p.categorie || '',
           p.description || '',
           p.image || ''
         ]);
         
-        sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+        sheet.getRange(2, 1, rows.length, 7).setValues(rows);
       }
       
       return createJsonResponse({ status: 'success', message: 'Produits synchronisés avec succès' });
+    }
+    
+    if (action === 'SYNC_USERS') {
+      const sheet = ss.getSheetByName('Utilisateurs');
+      const users = payload.users || [];
+      
+      const lastRow = sheet.getLastRow();
+      if (lastRow > 1) {
+        sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent();
+      }
+      
+      if (users.length > 0) {
+        const rows = users.map(u => [
+          u.id || generateId(),
+          u.nom || '',
+          u.role || '',
+          u.code || ''
+        ]);
+        sheet.getRange(2, 1, rows.length, 4).setValues(rows);
+      }
+      return createJsonResponse({ status: 'success', message: 'Utilisateurs synchronisés avec succès' });
     }
     
     if (action === 'ADD_MESSAGE') {

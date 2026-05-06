@@ -53,7 +53,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
               description: p.description,
               images: [p.image || 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&q=80'],
               reviews: defaultProducts.find(dp => dp.id === Number(p.id))?.reviews || [], 
-              arabicName: defaultFallback.arabicName || '',
+              arabicName: p.nom_arabe || defaultFallback.arabicName || '',
               emoji: defaultFallback.emoji || '🥖',
               quality: defaultFallback.quality || {
                  ingredients: '',

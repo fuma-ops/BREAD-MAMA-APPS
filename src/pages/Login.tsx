@@ -1,23 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, ChefHat, Truck } from 'lucide-react';
 import { useAuth, Role } from '../context/AuthContext';
+import { fetchUsersFromSheet, syncUsersToSheet } from '../services/googleSheetsService';
+
+const defaultUsers = [
+  { id: 1, nom: 'FZ (Admin)', role: 'admin', code: '1234' },
+  { id: 2, nom: 'Chef Cuisine principale', role: 'production', code: '1234' },
+  { id: 3, nom: 'Mohamed (Secteur 1)', role: 'livreur', code: '1234' }
+];
 
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [passcode, setPasscode] = useState('');
   const [selectedRole, setSelectedRole] = useState<Role>('admin');
+  const [users, setUsers] = useState<any[]>(defaultUsers);
+  const [loading, setLoading] = useState(true);
 
-  // POC: Simulation d'authentification sans backend.
-  // Plus tard, on vérifiera via Google Sheets (Utilisateurs)
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const sheetUsers = await fetchUsersFromSheet();
+        if (sheetUsers && sheetUsers.length > 0) {
+          setUsers(sheetUsers);
+        } else {
+          // Sync default users if sheet is empty
+          await syncUsersToSheet(defaultUsers);
+        }
+      } catch (error) {
+        console.error("Erreur de chargement des utilisateurs", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUsers();
+  }, []);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === '1234') { // Mot de passe de démo
-      login(selectedRole === 'admin' ? 'FZ (Admin)' : selectedRole === 'production' ? 'Chef (Production)' : 'Youssef (Livreur)', selectedRole);
+    
+    // Find if there's a user that matches the role and passcode (convert types safely)
+    const userMatch = users.find(u => String(u.role).toLowerCase() === selectedRole && String(u.code) === passcode);
+    
+    if (userMatch) { 
+      login(userMatch.nom, selectedRole);
       navigate('/dashboard');
     } else {
-      alert('Code incorrect. Utilisez 1234 pour la démo.');
+      alert('Code incorrect pour ce rôle. (Par défaut: 1234)');
     }
   };
 
