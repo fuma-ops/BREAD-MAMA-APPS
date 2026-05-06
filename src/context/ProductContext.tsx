@@ -73,7 +73,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
            await syncProductsToSheet(defaultProducts);
         }
       } catch (error) {
-        console.error("Could not fetch products from Google Sheets. Using local cache.", error);
+        console.warn("Could not fetch products from Google Sheets (may not be configured). Using local cache.");
       } finally {
         setLoading(false);
       }

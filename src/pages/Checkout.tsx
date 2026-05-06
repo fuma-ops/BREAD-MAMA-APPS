@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, CheckCircle, ArrowLeft, Send } from 'lucide-react';
+import { Truck, CheckCircle, ArrowLeft, Send, CreditCard } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrderContext';
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 export function Checkout() {
   const { items, subtotal, deliveryFee, isEmpty, clearCart } = useCart();
@@ -68,16 +69,7 @@ export function Checkout() {
     return encodeURIComponent(msg);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (paymentMethod === 'paypal') {
-      setIsProcessing(true);
-      // Simulate redirection to PayPal
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setIsProcessing(false);
-    }
-
+  const completeOrder = (details?: any) => {
     // Save order in context
     addOrder({
       customerName: formData.name,
@@ -96,6 +88,21 @@ export function Checkout() {
     // locally complete the order
     setOrderComplete(true);
     clearCart();
+    
+    // Note: Automatic redirection to WhatsApp is also good for feedback
+    const whatsappUrl = `https://wa.me/${(import.meta as any).env.VITE_WHATSAPP_NUMBER || '212600000000'}?text=${generateWhatsAppMessage()}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (paymentMethod === 'paypal') {
+      // Handled by PayPal Buttons
+      return;
+    }
+
+    completeOrder();
   };
 
   if (isProcessing) {
@@ -382,13 +389,68 @@ export function Checkout() {
               </div>
             </div>
 
-            <button 
-              type="submit"
-              form="checkout-form"
-              className="w-full py-4 rounded-lg font-bold text-white shadow-xl transition-all flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-opacity-90 shadow-[var(--color-accent)]/20"
-            >
-              CONFIRMER LA COMMANDE
-            </button>
+            {paymentMethod === 'paypal' ? (
+              <div className="space-y-4">
+                {(!formData.name || !formData.phone || !formData.address) ? (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs text-center">
+                    Veuillez remplir vos informations de livraison ci-contre avant de payer.
+                  </div>
+                ) : !(import.meta as any).env.VITE_PAYPAL_CLIENT_ID || (import.meta as any).env.VITE_PAYPAL_CLIENT_ID === 'test' || (import.meta as any).env.VITE_PAYPAL_CLIENT_ID.includes('VOTRE_CODE') ? (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-xs space-y-3">
+                    <p className="font-bold flex items-center gap-2">⚠️ Configuration Requise</p>
+                    <p>Le paiement PayPal n'est pas encore activé. Vous devez ajouter votre <strong>Client ID</strong> dans les paramètres de l'application (Icône ⚙️ Settings &gt; VITE_PAYPAL_CLIENT_ID).</p>
+                    <button 
+                      onClick={() => setPaymentMethod('cash')}
+                      className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 rounded border border-amber-500/30 transition-colors"
+                    >
+                      Payer à la livraison à la place
+                    </button>
+                  </div>
+                ) : (
+                  <PayPalScriptProvider options={{ 
+                    "clientId": (import.meta as any).env.VITE_PAYPAL_CLIENT_ID,
+                    currency: "USD", 
+                    intent: "capture"
+                  }}>
+                    <PayPalButtons 
+                      style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
+                      createOrder={(data, actions) => {
+                        const totalInUSD = (total / 10.2).toFixed(2); // Conversion MAD -> USD approx
+                        return actions.order.create({
+                          intent: "CAPTURE",
+                          purchase_units: [
+                            {
+                              amount: {
+                                currency_code: "USD",
+                                value: totalInUSD,
+                              },
+                              description: `Commande Bread Mama - ${formData.name}`
+                            },
+                          ],
+                        });
+                      }}
+                      onApprove={(data, actions) => {
+                        return actions.order!.capture().then((details) => {
+                          completeOrder(details);
+                        });
+                      }}
+                      onError={(err) => {
+                        console.error("PayPal Error:", err);
+                        alert("Une erreur est survenue avec PayPal. Veuillez vérifier vos identifiants dans les réglages.");
+                      }}
+                    />
+                  </PayPalScriptProvider>
+                )}
+              </div>
+            ) : (
+              <button 
+                type="submit"
+                form="checkout-form"
+                className="w-full py-4 rounded-lg font-bold text-white shadow-xl transition-all flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-opacity-90 shadow-[var(--color-accent)]/20"
+              >
+                CONFIRMER LA COMMANDE
+              </button>
+            )}
             <p className="text-center text-xs text-white/40 mt-4">
               En confirmant, vous acceptez nos conditions de vente.
             </p>

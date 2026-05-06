@@ -2,6 +2,7 @@
 
 // The URL should be set in a .env file as VITE_GOOGLE_SHEETS_API_URL
 const API_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_API_URL;
+const IS_CONFIGURED = API_URL && !API_URL.includes('VOTRE_ID') && !API_URL.includes('YOUR_ID');
 
 export interface OrderData {
   id: string;
@@ -21,8 +22,7 @@ export interface OrderData {
  * Fetch all orders from the Google Sheet
  */
 export const fetchOrdersFromSheet = async (): Promise<OrderData[]> => {
-  if (!API_URL) {
-    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+  if (!IS_CONFIGURED) {
     return [];
   }
 
@@ -33,11 +33,11 @@ export const fetchOrdersFromSheet = async (): Promise<OrderData[]> => {
     if (result.status === 'success') {
       return result.data as OrderData[];
     } else {
-      throw new Error(result.message || "Failed to fetch orders");
+      return [];
     }
   } catch (error) {
-    console.error("Error fetching from Google Sheets:", error);
-    throw error;
+    console.warn("Orders fetch disabled: VITE_GOOGLE_SHEETS_API_URL not configured correctly.");
+    return [];
   }
 };
 
@@ -45,8 +45,7 @@ export const fetchOrdersFromSheet = async (): Promise<OrderData[]> => {
  * Add a new order to the Google Sheet
  */
 export const addOrderToSheet = async (order: OrderData): Promise<boolean> => {
-  if (!API_URL) {
-    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+  if (!IS_CONFIGURED) {
     return false;
   }
 
@@ -80,8 +79,7 @@ export const updateOrderStatusInSheet = async (
   timestamp: string, 
   historyStr: string
 ): Promise<boolean> => {
-  if (!API_URL) {
-    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+  if (!IS_CONFIGURED) {
     return false;
   }
 
@@ -150,8 +148,7 @@ export const logActionToSheet = async (
  * Fetch all products from the Google Sheet
  */
 export const fetchProductsFromSheet = async (): Promise<any[]> => {
-  if (!API_URL) {
-    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+  if (!IS_CONFIGURED) {
     return [];
   }
 
@@ -162,11 +159,11 @@ export const fetchProductsFromSheet = async (): Promise<any[]> => {
     if (result.status === 'success') {
       return result.data;
     } else {
-      throw new Error(result.message || "Failed to fetch products");
+      return [];
     }
   } catch (error) {
-    console.error("Error fetching products from Google Sheets:", error);
-    throw error;
+    console.warn("Products sync disabled: VITE_GOOGLE_SHEETS_API_URL not configured correctly.");
+    return [];
   }
 };
 
@@ -174,8 +171,7 @@ export const fetchProductsFromSheet = async (): Promise<any[]> => {
  * Sync products list with Google Sheets
  */
 export const syncProductsToSheet = async (products: any[]): Promise<boolean> => {
-  if (!API_URL) {
-    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+  if (!IS_CONFIGURED) {
     return false;
   }
 
@@ -265,8 +261,7 @@ export const fetchMessagesFromSheet = async (): Promise<any[]> => {
  * Add a contact message to the Google Sheet
  */
 export const addMessageToSheet = async (message: { nom: string; email: string; telephone: string; sujet: string; message: string }): Promise<boolean> => {
-  if (!API_URL) {
-    console.warn("VITE_GOOGLE_SHEETS_API_URL is not set");
+  if (!IS_CONFIGURED) {
     return false;
   }
 
