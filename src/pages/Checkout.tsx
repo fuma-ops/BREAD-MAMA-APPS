@@ -21,7 +21,7 @@ export function Checkout() {
   const [orderComplete, setOrderComplete] = useState(false);
 
   const paypalFeePercent = 0.07; // 7% to cover commissions + conversion
-  const transactionFee = paymentMethod === 'paypal' ? Math.round(subtotal * paypalFeePercent) : 0;
+  const transactionFee = paymentMethod === 'paypal' ? Math.ceil(subtotal * paypalFeePercent) : 0;
   const total = subtotal + deliveryFee + transactionFee;
 
   if (isEmpty && !orderComplete) {
@@ -436,7 +436,7 @@ export function Checkout() {
                       }}
                       onError={(err) => {
                         console.error("PayPal Error:", err);
-                        alert("Une erreur est survenue avec PayPal. Veuillez vérifier vos identifiants dans les réglages.");
+                        alert("Erreur PayPal : Vérifiez que votre Client ID est bien en mode 'LIVE' et que votre compte PayPal est un compte Business vérifié.");
                       }}
                     />
                   </PayPalScriptProvider>
