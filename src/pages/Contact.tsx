@@ -79,7 +79,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <h3 className="font-bold text-white mb-1">Notre Atelier</h3>
-                  <p className="text-white/60">Gueliz, Marrakech<br/>Maroc</p>
+                  <p className="text-white/60">Home Sweet Home<br/>Marrakech, Maroc</p>
                 </div>
               </div>
               

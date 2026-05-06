@@ -17,11 +17,18 @@ export function AdminDashboard() {
   const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
     if (activeTab === 'messages') {
       fetchMessagesFromSheet().then(data => {
-        setMessages(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        if (!isMounted) return;
+        const msgArray = Array.isArray(data) ? [...data] : [];
+        setMessages(msgArray.sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()));
+      }).catch(err => {
+        if (!isMounted) return;
+        setMessages([]);
       });
     }
+    return () => { isMounted = false; };
   }, [activeTab]);
 
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
@@ -660,8 +667,9 @@ export function AdminDashboard() {
             <button 
               onClick={() => {
                 fetchMessagesFromSheet().then(data => {
-                  setMessages(data.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-                });
+                  const msgArray = Array.isArray(data) ? [...data] : [];
+                  setMessages(msgArray.sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()));
+                }).catch(() => setMessages([]));
               }}
               className="bg-[var(--color-accent)] hover:bg-[#A86F4A] text-white px-4 py-2 rounded font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-colors shrink-0"
             >
@@ -706,7 +714,7 @@ export function AdminDashboard() {
                       <div className="flex items-center gap-3">
                         {msg.telephone && (
                           <a 
-                            href={`https://wa.me/${msg.telephone.replace(/\D/g,'')}?text=${encodeURIComponent(`Bonjour ${msg.nom}, suite à votre message: "${msg.message.substring(0, 50)}..."`)}`}
+                            href={`https://wa.me/${String(msg.telephone).replace(/\D/g,'')}?text=${encodeURIComponent(`Bonjour ${msg.nom || ''}, suite à votre message: "${(msg.message || '').substring(0, 50)}..."`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-full transition-colors relative group"
