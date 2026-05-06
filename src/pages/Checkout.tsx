@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrderContext';
 
 export function Checkout() {
-  const { items, subtotal, deliveryFee, total, isEmpty, clearCart } = useCart();
+  const { items, subtotal, deliveryFee, isEmpty, clearCart } = useCart();
   const { addOrder } = useOrders();
   const navigate = useNavigate();
   
@@ -15,8 +15,13 @@ export function Checkout() {
     address: '',
     notes: ''
   });
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' or 'card'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash', 'paypal', 'transfer', 'wallet'
+  const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+
+  const paypalFeePercent = 0.07; // 7% to cover commissions + conversion
+  const transactionFee = paymentMethod === 'paypal' ? Math.round(subtotal * paypalFeePercent) : 0;
+  const total = subtotal + deliveryFee + transactionFee;
 
   if (isEmpty && !orderComplete) {
     return (
@@ -50,15 +55,29 @@ export function Checkout() {
     });
     msg += `\n*Sous-total:* ${subtotal} DH\n`;
     msg += `*Livraison:* ${deliveryFee} DH\n`;
-    msg += `*TOTAL:* ${total} DH\n`;
-    msg += `\nMéthode: ${paymentMethod === 'cash' ? 'Paiement à la livraison' : 'WhatsApp'}`;
+    if (transactionFee > 0) msg += `*Frais Transaction:* ${transactionFee} DH\n`;
+    msg += `*TOTAL À PAYER:* ${total} DH\n`;
+    const methodNames: Record<string, string> = {
+      'cash': 'Paiement à la livraison',
+      'paypal': 'PayPal / Carte Bancaire',
+      'transfer': 'Virement Bancaire',
+      'wallet': 'M-Wallet / Transfert Mobile'
+    };
+    msg += `\nMéthode: ${methodNames[paymentMethod] || paymentMethod}`;
     
     return encodeURIComponent(msg);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (paymentMethod === 'paypal') {
+      setIsProcessing(true);
+      // Simulate redirection to PayPal
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsProcessing(false);
+    }
+
     // Save order in context
     addOrder({
       customerName: formData.name,
@@ -68,15 +87,26 @@ export function Checkout() {
       subtotal,
       deliveryFee,
       total,
+      paymentMethod: 
+        paymentMethod === 'paypal' ? 'CARD' : 
+        paymentMethod === 'transfer' ? 'TRANSFER' : 
+        paymentMethod === 'wallet' ? 'WALLET' : 'CASH',
     });
-    
-    // Both payment methods trigger automatic WhatsApp confirmation simulation (no redirect)
-    console.log(`Automatic WhatsApp Confirmation sent for order via ${paymentMethod}`);
     
     // locally complete the order
     setOrderComplete(true);
     clearCart();
   };
+
+  if (isProcessing) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-16 h-16 border-4 border-[var(--color-gold)] border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 className="text-2xl font-serif font-bold text-white mb-2">Connexion sécurisée à PayPal...</h2>
+        <p className="text-white/60">Veuillez ne pas fermer cette page. Vous allez être redirigé.</p>
+      </div>
+    );
+  }
 
   if (orderComplete) {
     return (
@@ -191,7 +221,8 @@ export function Checkout() {
               </h2>
               
               <div className="space-y-4">
-                <label className={`block p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'cash' ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5' : 'border-white/10 bg-black/20 hover:bg-black/30'}`}>
+                {/* Cash */}
+                <label className={`block p-5 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'cash' ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5 ring-1 ring-[var(--color-gold)]/30' : 'border-white/10 bg-black/20 hover:bg-black/30'}`}>
                   <div className="flex items-center gap-4">
                     <input 
                       type="radio" 
@@ -202,31 +233,114 @@ export function Checkout() {
                       className="w-5 h-5 accent-[var(--color-gold)]"
                     />
                     <div className="flex-1">
-                      <span className="font-bold text-white block text-lg">💵 Paiement à la livraison (Cash)</span>
-                      <span className="text-white/50 text-sm">Payez en espèces lorsque le livreur vous remet la commande.</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-white text-lg">Paiement à la livraison</span>
+                        <span className="text-[10px] bg-white/10 text-white/60 px-2 py-0.5 rounded uppercase font-bold tracking-widest">Le plus utilisé</span>
+                      </div>
+                      <span className="text-white/50 text-sm">Payez en espèces (MAD) lors de la réception de vos plats.</span>
                     </div>
                   </div>
                 </label>
 
-                <label className={`block p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'card' ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5' : 'border-white/10 bg-black/20 hover:bg-black/30'}`}>
+                {/* PayPal (Card) */}
+                <label className={`block p-5 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'paypal' ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5 ring-1 ring-[var(--color-gold)]/30' : 'border-white/10 bg-black/20 hover:bg-black/30'}`}>
                   <div className="flex items-center gap-4">
                     <input 
                       type="radio" 
                       name="payment" 
-                      value="card"
-                      checked={paymentMethod === 'card'}
-                      onChange={() => setPaymentMethod('card')}
+                      value="paypal" 
+                      checked={paymentMethod === 'paypal'}
+                      onChange={() => setPaymentMethod('paypal')}
                       className="w-5 h-5 accent-[var(--color-gold)]"
                     />
                     <div className="flex-1">
-                      <span className="font-bold text-white block text-lg">💳 Paiement par carte bancaire</span>
-                      <span className="text-white/50 text-sm">Paiement électronique sécurisé en ligne.</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-white text-lg">PayPal / Carte Bancaire</span>
+                        <div className="flex gap-1 h-4 opacity-70">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-full" referrerPolicy="no-referrer" />
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-full" referrerPolicy="no-referrer" />
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-full" referrerPolicy="no-referrer" />
+                        </div>
+                      </div>
+                      <span className="text-white/50 text-sm">Paiement sécurisé par carte. (+7% de frais de transaction PayPal/Conversion)</span>
                     </div>
                   </div>
                 </label>
+
+                {/* Transfer */}
+                <label className={`block p-5 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'transfer' ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5 ring-1 ring-[var(--color-gold)]/30' : 'border-white/10 bg-black/20 hover:bg-black/30'}`}>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="radio" 
+                      name="payment" 
+                      value="transfer" 
+                      checked={paymentMethod === 'transfer'}
+                      onChange={() => setPaymentMethod('transfer')}
+                      className="w-5 h-5 accent-[var(--color-gold)]"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-white text-lg">Virement Bancaire (RIB)</span>
+                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded uppercase font-bold tracking-widest">Sécurisé</span>
+                      </div>
+                      <span className="text-white/50 text-sm">Effectuez le virement et envoyez la preuve sur WhatsApp.</span>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Wallet / Mobile Pay */}
+                <label className={`block p-5 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'wallet' ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5 ring-1 ring-[var(--color-gold)]/30' : 'border-white/10 bg-black/20 hover:bg-black/30'}`}>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="radio" 
+                      name="payment" 
+                      value="wallet" 
+                      checked={paymentMethod === 'wallet'}
+                      onChange={() => setPaymentMethod('wallet')}
+                      className="w-5 h-5 accent-[var(--color-gold)]"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-white text-lg">M-Wallet / Transfert Mobile (Conseillé)</span>
+                        <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase font-bold tracking-widest">Anti-Faux Ordre</span>
+                      </div>
+                      <span className="text-white/50 text-sm">Payez un petit acompte (20 DH) via CIH, Barid Pay ou Inwi Money pour valider la préparation.</span>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Info blocks for Transfer/Wallet */}
+                {(paymentMethod === 'transfer' || paymentMethod === 'wallet' || paymentMethod === 'cash') && (
+                  <div className="p-4 bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/30 rounded-xl animate-in fade-in slide-in-from-top-2">
+                    <p className="text-[var(--color-gold)] font-bold text-sm mb-2 flex items-center gap-2">
+                       {paymentMethod === 'cash' ? '⚠️ Engagement de Sincérité' : 'ℹ️ Instructions de paiement'}
+                    </p>
+                    {paymentMethod === 'transfer' ? (
+                      <div className="space-y-2">
+                        <p className="text-white/80 text-xs">Veuillez transférer le montant total vers le RIB suivant :</p>
+                        <div className="bg-black/40 p-3 rounded font-mono text-white text-sm break-all select-all border border-white/5">
+                          007 780 0001234567890123 45
+                        </div>
+                        <p className="text-white/40 text-[10px]">Titulaire : Bread Mama</p>
+                      </div>
+                    ) : paymentMethod === 'wallet' ? (
+                      <div className="space-y-2">
+                        <p className="text-white/80 text-xs">Veuillez effectuer le transfert "MarocPay" (Acompte ou Total) vers :</p>
+                        <div className="bg-black/40 p-3 rounded font-mono text-white text-sm select-all border border-white/5">
+                          06 61 23 45 67
+                        </div>
+                        <p className="text-white/40 text-[10px]">Note : Envoyez le reçu via WhatsApp pour lancer la préparation.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="text-white/80 text-xs">Nos plats sont préparés **spécialement pour vous**.</p>
+                        <p className="text-white/60 text-[10px]">En choisissant la livraison, vous vous engagez à réceptionner la commande. Pour les commandes de &gt;200 DH, un acompte pourra vous être demandé par téléphone.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-
           </form>
         </div>
 
@@ -256,6 +370,12 @@ export function Checkout() {
                 <span>Livraison (Marrakech)</span>
                 <span>{deliveryFee} DH</span>
               </div>
+              {transactionFee > 0 && (
+                <div className="flex justify-between text-[var(--color-gold)] text-sm animate-in slide-in-from-right-2">
+                  <span>Frais PayPal/Conversion (+7%)</span>
+                  <span>{transactionFee} DH</span>
+                </div>
+              )}
               <div className="flex justify-between text-xl font-bold text-[var(--color-gold)] pt-3 border-t border-white/10">
                 <span>TOTAL</span>
                 <span>{total} DH</span>

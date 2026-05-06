@@ -56,5 +56,6 @@ export interface Order {
   total: number;
   status: OrderStatus;
   createdAt: string;
+  paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER' | 'WALLET';
   history?: OrderHistoryEvent[];
 }

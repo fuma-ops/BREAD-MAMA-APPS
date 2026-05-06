@@ -285,6 +285,15 @@ export function AdminDashboard() {
                         }`}>
                           {order.status}
                         </span>
+                        {order.paymentMethod && (
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded border w-fit ${
+                            order.paymentMethod === 'CARD' 
+                              ? 'border-blue-500/30 text-blue-400 bg-blue-500/5' 
+                              : 'border-white/10 text-white/40'
+                          }`}>
+                            {order.paymentMethod === 'CARD' ? '💳 EN LIGNE' : '💵 À LA LIVRAISON'}
+                          </span>
+                        )}
                         <div className="mt-2 text-[10px] text-white/50 space-y-1">
                           {order.history?.map((h: any, i: number) => (
                             <div key={i} className="flex gap-2 border-l border-white/20 pl-2">

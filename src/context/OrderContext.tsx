@@ -48,7 +48,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
             // Auto-correct if columns shifted and `status` contains history JSON
             if (status.trim().startsWith('[') && status.trim().endsWith(']')) {
                historique = status;
-               status = o.total || o.historique || 'PENDING'; // total might have caught the status
+               status = (o.total || o.historique || 'PENDING').toString(); // total might have caught the status
                // if `total` caught the status, something else might have caught the total... like `produits`
                if (status === 'PENDING' || status === 'VALIDATED' || status === 'IN_PREPARATION' || status === 'READY_FOR_DELIVERY' || status === 'DELIVERED') {
                   // status recovered
@@ -79,6 +79,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
               deliveryFee: 15,
               total: Number(totalVal || 0),
               status: (status || 'PENDING') as OrderStatus,
+              paymentMethod: (o.mode_paiement || 'CASH') as any,
               createdAt: o.date || new Date().toISOString(),
               history: history
             };
@@ -122,6 +123,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         produits: JSON.stringify(newOrder.items),
         total: newOrder.total,
         statut: newOrder.status,
+        mode_paiement: newOrder.paymentMethod || 'CASH',
         historique: JSON.stringify(newOrder.history)
       });
     } catch (e) {
