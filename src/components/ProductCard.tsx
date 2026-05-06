@@ -13,6 +13,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart } = useCart();
   const [isLiked, setIsLiked] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -20,10 +21,11 @@ export function ProductCard({ product }: ProductCardProps) {
       id: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1,
+      quantity: quantity,
       category: product.category,
       image: product.images[0] || ''
     });
+    setQuantity(1); // reset after adding
   };
 
   return (
@@ -85,13 +87,18 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
             
             {/* Quick Add Action */}
-            <div className="flex items-center">
-                 <button 
+            <div className="flex flex-col items-end gap-1.5">
+                  <button 
                     onClick={handleAddToCart}
-                    className="h-8 md:h-9 px-3 md:px-4 bg-[var(--color-accent)] hover:bg-[#A86F4A] text-white text-[10px] md:text-[11px] font-bold rounded shadow-lg shadow-[var(--color-accent)]/20 transition-all tracking-wider flex items-center justify-center gap-1.5 md:gap-2 uppercase"
+                    className="h-8 md:h-9 px-3 md:px-4 bg-[var(--color-accent)] hover:bg-[#A86F4A] text-white text-[10px] md:text-[11px] font-bold rounded shadow-lg shadow-[var(--color-accent)]/20 transition-all tracking-wider flex items-center justify-center gap-1.5 md:gap-2 uppercase w-full"
                   >
-                    <Plus size={16} strokeWidth={2.5} /> <span className="hidden lg:inline">Ajouter</span>
+                    <Plus size={14} strokeWidth={2.5} /> <span>Ajouter</span>
                   </button>
+                  <div className="flex items-center gap-2 bg-black/40 rounded justify-between px-2 py-1 w-full" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-white/70 hover:text-[var(--color-gold)] font-bold px-1.5 focus:outline-none">-</button>
+                    <span className="text-white font-mono text-xs">{quantity}</span>
+                    <button onClick={() => setQuantity(quantity + 1)} className="text-white/70 hover:text-[var(--color-gold)] font-bold px-1.5 focus:outline-none">+</button>
+                  </div>
             </div>
           </div>
         </div>

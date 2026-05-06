@@ -5,10 +5,11 @@ const API_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_API_URL;
 
 export interface OrderData {
   id: string;
-  date_creation: string;
+  date: string;
   client: string;
   telephone: string;
   adresse: string;
+  quantite: number;
   produits: string;
   total: number;
   statut: string;

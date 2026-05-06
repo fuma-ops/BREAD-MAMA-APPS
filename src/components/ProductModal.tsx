@@ -40,12 +40,15 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
       id: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1,
+      quantity: quantity,
       category: product.category,
       image: product.images[0] || ''
     });
+    setQuantity(1);
     onClose();
   };
+
+  const [quantity, setQuantity] = useState(1);
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,12 +231,17 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-6 border-t border-white/10 shrink-0 flex flex-col sm:flex-row gap-3 bg-[var(--color-surface)]">
+        <div className="p-4 sm:p-6 border-t border-white/10 shrink-0 flex flex-col sm:flex-row items-center gap-3 bg-[var(--color-surface)]">
+          <div className="flex items-center gap-4 bg-black/40 rounded-lg px-4 py-3 border border-white/5 w-full sm:w-auto justify-between sm:justify-start">
+            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-white/70 hover:text-[var(--color-gold)] font-bold px-2 focus:outline-none text-xl">-</button>
+            <span className="text-white font-mono text-lg">{quantity}</span>
+            <button onClick={() => setQuantity(quantity + 1)} className="text-white/70 hover:text-[var(--color-gold)] font-bold px-2 focus:outline-none text-xl">+</button>
+          </div>
           <button 
             onClick={handleAddToCart}
-            className="flex-1 py-4 bg-gradient-to-r from-[var(--color-accent)] to-[#6b4229] hover:opacity-90 text-white font-bold rounded-lg shadow-lg flex justify-center items-center gap-2 transition-all"
+            className="flex-1 w-full py-4 bg-gradient-to-r from-[var(--color-accent)] to-[#6b4229] hover:opacity-90 text-white font-bold rounded-lg shadow-lg flex justify-center items-center gap-2 transition-all text-sm uppercase tracking-wider"
           >
-            Ajouter au panier (1) <ArrowRight size={18} />
+            Ajouter au panier <ArrowRight size={18} />
           </button>
           <button 
             onClick={onClose}

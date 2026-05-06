@@ -6,7 +6,7 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId(); // Utilise
 
 // Configurations des feuilles et de leurs en-têtes
 const SHEETS_CONFIG = {
-  'Commandes': ['id', 'date_creation', 'client', 'telephone', 'adresse', 'produits', 'total', 'statut', 'historique'],
+  'Commandes': ['id', 'date', 'client', 'telephone', 'adresse', 'quantite', 'produits', 'total', 'statut', 'historique'],
   'Produits': ['id', 'nom', 'nom_arabe', 'prix', 'categorie', 'description', 'image'],
   'Utilisateurs': ['id', 'nom', 'role', 'code'],
   'Logs': ['timestamp', 'actor', 'actionType', 'details'],
@@ -104,10 +104,11 @@ function doPost(e) {
       
       const rowData = [
         order.id || generateId(),
-        order.date_creation || new Date().toISOString(),
+        order.date || new Date().toISOString(),
         order.client || '',
         order.telephone || '',
         order.adresse || '',
+        order.quantite || 0,
         typeof order.produits === 'string' ? order.produits : JSON.stringify(order.produits || []),
         order.total || 0,
         order.statut || 'Nouveau',

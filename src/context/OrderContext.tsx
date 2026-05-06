@@ -47,7 +47,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
             } catch(e) {}
             
             if (history.length === 0) {
-              history = [{ status: (o.statut || 'PENDING') as OrderStatus, timestamp: o.date_creation || new Date().toISOString(), actor: 'Système' }];
+              history = [{ status: (o.statut || 'PENDING') as OrderStatus, timestamp: o.date || new Date().toISOString(), actor: 'Système' }];
             }
 
             return {
@@ -60,7 +60,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
               deliveryFee: 15,
               total: Number(o.total || 0),
               status: (o.statut || 'PENDING') as OrderStatus,
-              createdAt: o.date_creation || new Date().toISOString(),
+              createdAt: o.date || new Date().toISOString(),
               history: history
             };
           });
@@ -95,10 +95,11 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     try {
       await addOrderToSheet({
         id: newOrder.id,
-        date_creation: newOrder.createdAt,
+        date: newOrder.createdAt,
         client: newOrder.customerName,
         telephone: newOrder.customerPhone,
         adresse: newOrder.customerAddress,
+        quantite: newOrder.items.reduce((acc, item) => acc + item.quantity, 0),
         produits: JSON.stringify(newOrder.items),
         total: newOrder.total,
         statut: newOrder.status,

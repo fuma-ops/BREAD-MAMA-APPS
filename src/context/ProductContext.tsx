@@ -48,7 +48,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
              return {
               id: Number(p.id),
               name: p.nom,
-              price: Number(p.prix),
+              price: Number(String(p.prix).replace(/[^\d.,]/g, '').replace(',', '.')),
               category: p.categorie as any,
               description: p.description,
               images: [p.image || 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&q=80'],
