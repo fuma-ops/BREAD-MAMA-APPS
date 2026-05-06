@@ -180,9 +180,9 @@ export const syncProductsToSheet = async (products: any[]): Promise<boolean> => 
 
   const mappedProducts = products.map(p => ({
      id: p.id,
-     name: p.name,
-     price: p.price,
-     category: p.category,
+     nom: p.name,
+     prix: p.price,
+     categorie: p.category,
      description: p.description,
      image: p.images && p.images.length > 0 ? p.images[0] : (p.image || '')
   }));
