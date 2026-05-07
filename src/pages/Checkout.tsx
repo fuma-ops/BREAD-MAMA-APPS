@@ -407,27 +407,32 @@ export function Checkout() {
                     </button>
                   </div>
                 ) : (
-                  <PayPalScriptProvider options={{ 
-                    "clientId": (import.meta as any).env.VITE_PAYPAL_CLIENT_ID,
-                    currency: "MAD", 
-                    intent: "capture"
-                  }}>
-                    <PayPalButtons 
-                      style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
-                      createOrder={(data, actions) => {
-                        return actions.order.create({
-                          intent: "CAPTURE",
-                          purchase_units: [
-                            {
-                              amount: {
-                                currency_code: "MAD",
-                                value: total.toString(),
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-gray-400 text-center italic">
+                      Note: PayPal ne supporte pas le MAD. Le montant sera converti en USD au moment du paiement.
+                    </p>
+                    <PayPalScriptProvider options={{ 
+                      "clientId": (import.meta as any).env.VITE_PAYPAL_CLIENT_ID,
+                      currency: "USD", 
+                      intent: "capture"
+                    }}>
+                      <PayPalButtons 
+                        style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
+                        createOrder={(data, actions) => {
+                          const totalInUSD = (total / 10.2).toFixed(2); // Conversion MAD -> USD approx
+                          return actions.order.create({
+                            intent: "CAPTURE",
+                            purchase_units: [
+                              {
+                                amount: {
+                                  currency_code: "USD",
+                                  value: totalInUSD,
+                                },
+                                description: `Commande Bread Mama - ${formData.name}`
                               },
-                              description: `Commande Bread Mama - ${formData.name}`
-                            },
-                          ],
-                        });
-                      }}
+                            ],
+                          });
+                        }}
                       onApprove={(data, actions) => {
                         return actions.order!.capture().then((details) => {
                           completeOrder(details);
@@ -439,7 +444,8 @@ export function Checkout() {
                       }}
                     />
                   </PayPalScriptProvider>
-                )}
+                </div>
+              )}
               </div>
             ) : (
               <button 
