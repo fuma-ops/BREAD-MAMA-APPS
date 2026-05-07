@@ -409,20 +409,19 @@ export function Checkout() {
                 ) : (
                   <PayPalScriptProvider options={{ 
                     "clientId": (import.meta as any).env.VITE_PAYPAL_CLIENT_ID,
-                    currency: "USD", 
+                    currency: "MAD", 
                     intent: "capture"
                   }}>
                     <PayPalButtons 
                       style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
                       createOrder={(data, actions) => {
-                        const totalInUSD = (total / 10.2).toFixed(2); // Conversion MAD -> USD approx
                         return actions.order.create({
                           intent: "CAPTURE",
                           purchase_units: [
                             {
                               amount: {
-                                currency_code: "USD",
-                                value: totalInUSD,
+                                currency_code: "MAD",
+                                value: total.toString(),
                               },
                               description: `Commande Bread Mama - ${formData.name}`
                             },
